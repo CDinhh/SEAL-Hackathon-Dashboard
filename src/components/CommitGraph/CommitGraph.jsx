@@ -121,7 +121,7 @@ const CommitGraph = ({ data }) => {
                             y1={graphData.center.y}
                             x2={repo.x}
                             y2={repo.y}
-                            stroke="#00d9ff"
+                            stroke={repo.color}
                             strokeWidth="2"
                             opacity="0.5"
                         />
@@ -157,13 +157,13 @@ const CommitGraph = ({ data }) => {
                     {/* Draw repo nodes */}
                     {graphData.repos.map((repo, index) => {
                         // Label offset - push outward based on angle
-                        const labelDistance = 90;
+                        const labelDistance = 100;
                         const labelX = repo.x + labelDistance * Math.cos(repo.angle);
                         const labelY = repo.y + labelDistance * Math.sin(repo.angle);
 
                         // Rectangle dimensions
-                        const rectWidth = 220;
-                        const rectHeight = 90;
+                        const rectWidth = 290;
+                        const rectHeight = 115;
                         const rectX = labelX - rectWidth / 2;
                         const rectY = labelY - rectHeight / 2;
 
@@ -228,7 +228,7 @@ const CommitGraph = ({ data }) => {
                                     rx="12"
                                     ry="12"
                                     fill="rgba(30, 30, 50, 0.95)"
-                                    stroke="#00d9ff"
+                                    stroke={repo.color}
                                     strokeWidth="2"
                                     opacity="0.95"
                                 />
@@ -238,17 +238,17 @@ const CommitGraph = ({ data }) => {
                                     y={labelY - 10}
                                     textAnchor="middle"
                                     fill={repo.color}
-                                    fontSize="24"
+                                    fontSize="30"
                                     fontWeight="bold"
                                 >
                                     {displayRepoName}
                                 </text>
                                 {/* Commit count badge - green background */}
                                 <rect
-                                    x={labelX - 45}
+                                    x={labelX - 58}
                                     y={labelY + 10}
-                                    width="90"
-                                    height="34"
+                                    width="116"
+                                    height="42"
                                     rx="8"
                                     ry="8"
                                     fill={badgeColor}
@@ -256,10 +256,10 @@ const CommitGraph = ({ data }) => {
                                 />
                                 <text
                                     x={labelX}
-                                    y={labelY + 34}
+                                    y={labelY + 38}
                                     textAnchor="middle"
                                     fill={repo.commits > maxCommits * 0.75 ? '#000000' : '#ffffff'}
-                                    fontSize="20"
+                                    fontSize="26"
                                     fontWeight="bold"
                                 >
                                     {repo.commits}

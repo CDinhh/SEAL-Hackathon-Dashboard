@@ -67,7 +67,7 @@ const HomePage = () => {
 
   useRealtimeCommits(handleNewCommit);
   return (
-    <div className='h-full relative p-5'>
+    <div className='h-screen overflow-hidden relative p-5'>
 
       {/* Enhanced Circuit Lines */}
       <div className="circuit-lines">

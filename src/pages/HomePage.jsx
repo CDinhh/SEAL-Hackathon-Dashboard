@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import CommitBoard from '../components/CommitBoard/CommitBoard'
+import CommitGraph from '../components/CommitGraph/CommitGraph'
 import MainHeader from '../components/MainHeader/MainHeader'
 import { useRealtimeCommits } from '../hooks/useRealtimeCommits.js'
 
@@ -156,7 +156,7 @@ const HomePage = () => {
       <div className="relative z-10 px-7">
         <MainHeader />
         {commits && commits.length > 0 ? (
-          <CommitBoard data={commits} />
+          <CommitGraph data={commits} />
         ) : (
           <div className="text-cyan-300 font-mono select-non p-8">
             {/* Loading/Empty State */}

@@ -163,6 +163,25 @@ const HomePage = () => {
       <div className="scan-line" style={{ animationDelay: '-2s', opacity: 0.4, height: '6px', filter: 'blur(6px)' }}></div>
       <div className="scan-line" style={{ animationDelay: '-4s', opacity: 0.3, height: '4px', filter: 'blur(8px)' }}></div>
 
+      {/* NEW: Cyber Perspective Grid */}
+      <div className="cyber-grid-overlay"></div>
+
+      {/* NEW: Cinematic Noise Grain */}
+      <div className="noise-overlay"></div>
+
+      {/* NEW: Corner Accents */}
+      <div className="corner-accent corner-tl"></div>
+      <div className="corner-accent corner-tr"></div>
+      <div className="corner-accent corner-bl"></div>
+      <div className="corner-accent corner-br"></div>
+
+      {/* NEW: Floating Status Text */}
+      <div className="floating-hud text-cyan-500/30">
+        SYS_STATUS: ONLINE<br/>
+        NET_SPEED: 12TB/s<br/>
+        SEC_LEVEL: ALPHA
+      </div>
+
       {/* Main content with enhanced glassmorphism */}
       <div className="relative z-10 px-7">
         <MainHeader />

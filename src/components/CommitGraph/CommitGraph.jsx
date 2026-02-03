@@ -30,7 +30,7 @@ const CommitGraph = ({ data }) => {
         const innerRadiusX = 600;
         const innerRadiusY = 420;
         const outerRadiusX = 1100;
-        const outerRadiusY = 650;
+        const outerRadiusY = 550; // Reduced to lift bottom nodes up
 
         const repos = [];
 
@@ -115,7 +115,7 @@ const CommitGraph = ({ data }) => {
 
                     {/* Draw connections from center to repos */}
                     {graphData.repos.map((repo, index) => (
-                        <line
+                        <motion.line
                             key={`line-${index}`}
                             x1={graphData.center.x}
                             y1={graphData.center.y}
@@ -123,7 +123,13 @@ const CommitGraph = ({ data }) => {
                             y2={repo.y}
                             stroke={repo.color}
                             strokeWidth="2"
-                            opacity="0.5"
+                            initial={{ x2: graphData.center.x, y2: graphData.center.y, opacity: 0 }}
+                            animate={{ x2: repo.x, y2: repo.y, opacity: 0.5 }}
+                            transition={{
+                                duration: 0.4,
+                                delay: index * 0.1,
+                                ease: "easeOut"
+                            }}
                         />
                     ))}
 
@@ -188,10 +194,28 @@ const CommitGraph = ({ data }) => {
                         const isTop1 = repo.commits === maxCommits && maxCommits > 0;
 
                         return (
-                            <g
+                            <motion.g
                                 key={`node-${index}`}
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: 1, scale: 1, y: [0, -15, 0] }}
+                                whileHover={{ scale: 1.1 }}
+                                transition={{
+                                    default: { // For entrance
+                                        duration: 0.5,
+                                        delay: index * 0.1 + 0.35,
+                                        type: "spring",
+                                        stiffness: 260,
+                                        damping: 20
+                                    },
+                                    y: { // For floating loop
+                                        duration: 4 + (index % 3), // Random-ish duration 4-6s
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                        delay: index * 0.2 // delay start of float slightly
+                                    }
+                                }}
                                 onClick={() => handleNodeClick(repo.fullName)}
-                                style={{ cursor: 'pointer' }}
+                                style={{ cursor: 'pointer', transformOrigin: 'center' }}
                                 className="hover:opacity-80 transition-opacity"
                             >
                                 {/* Node indicator - small circle at original position */}
@@ -208,17 +232,15 @@ const CommitGraph = ({ data }) => {
 
                                 {/* Crown for Top 1 */}
                                 {isTop1 && (
-                                    <motion.text
+                                    <text
                                         x={rectX + rectWidth / 2}
                                         y={rectY - 15}
                                         textAnchor="middle"
                                         fontSize="48"
                                         style={{ filter: 'drop-shadow(0 0 10px gold)' }}
-                                        animate={{ y: [0, -10, 0] }}
-                                        transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
                                     >
                                         👑
-                                    </motion.text>
+                                    </text>
                                 )}
 
                                 {/* Label rectangle - positioned radially */}
@@ -230,11 +252,28 @@ const CommitGraph = ({ data }) => {
                                     rx="12"
                                     ry="12"
                                     fill="rgba(20, 10, 35, 0.95)"
-                                    stroke={repo.color}
-                                    strokeWidth="2"
+                                    stroke={isTop1 ? "green" : repo.color}
+                                    strokeWidth={isTop1 ? "3" : "2"}
                                     opacity="0.95"
-                                    style={{ filter: "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))" }}
+                                    style={{ filter: isTop1 ? "drop-shadow(0 0 15px rgba(4, 255, 0, 0.6))" : "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))" }}
                                 />
+
+                                {/* Static Border Element for Top 1 (No pulsing) */}
+                                {isTop1 && (
+                                    <rect
+                                        x={rectX - 5}
+                                        y={rectY - 5}
+                                        width={rectWidth + 10}
+                                        height={rectHeight + 10}
+                                        rx="16"
+                                        ry="16"
+                                        fill="none"
+                                        stroke="green"
+                                        strokeWidth="2"
+                                        opacity="0.5"
+                                    />
+                                )}
+
                                 {/* Repo name - top part with team color */}
                                 <text
                                     x={labelX}
@@ -254,20 +293,20 @@ const CommitGraph = ({ data }) => {
                                     height="42"
                                     rx="8"
                                     ry="8"
-                                    fill={badgeColor}
+                                    fill={isTop1 ? "#00ff15ff" : badgeColor}
                                     opacity="1"
                                 />
                                 <text
                                     x={labelX}
                                     y={labelY + 38}
                                     textAnchor="middle"
-                                    fill={'#ffffff'}
+                                    fill={isTop1 ? "#000000" : '#ffffff'}
                                     fontSize="26"
                                     fontWeight="bold"
                                 >
                                     {repo.commits}
                                 </text>
-                            </g>
+                            </motion.g>
                         );
                     })}
                 </svg>

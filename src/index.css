@@ -96,7 +96,7 @@ body::after {
   color: #3CF2F2;
   font-family: "Space Mono", monospace;
   font-size: 13px;
-  opacity: 0.5;
+  opacity: 0;
   animation: floatCode 10s infinite linear;
   text-shadow: 0 0 8px currentColor;
 }
@@ -109,7 +109,7 @@ body::after {
   background: linear-gradient(45deg, #3CF2F2, #2ED8D8);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   animation: hexFloat 15s infinite ease-in-out;
-  opacity: 0.3;
+  opacity: 0;
 }
 
 /* Data stream particles - Light Cyan */
@@ -117,9 +117,10 @@ body::after {
   position: absolute;
   color: #6AF7FF;
   font-family: "Space Mono", monospace;
-  font-size: 11px;
-  opacity: 0.6;
-  animation: dataFlow 8s infinite linear;
+  font-size: 10px;
+  opacity: 0;
+  left: -300px;
+  animation: dataFlow 12s infinite linear;
   text-shadow: 0 0 4px currentColor;
 }
 
@@ -130,11 +131,11 @@ body::after {
   }
 
   10% {
-    opacity: 0.6;
+    opacity: 0.4;
   }
 
   90% {
-    opacity: 0.2;
+    opacity: 0.1;
   }
 
   100% {
@@ -150,7 +151,7 @@ body::after {
   }
 
   20% {
-    opacity: 0.4;
+    opacity: 0.3;
   }
 
   80% {
@@ -165,22 +166,148 @@ body::after {
 
 @keyframes dataFlow {
   0% {
-    transform: translateX(-100vw) translateY(0);
+    transform: translateX(0) translateY(0);
     opacity: 0;
   }
 
-  10% {
-    opacity: 0.8;
-  }
-
-  90% {
+  20% {
     opacity: 0.4;
   }
 
+  90% {
+    opacity: 0.2;
+  }
+
   100% {
-    transform: translateX(100vw) translateY(-40px);
+    transform: translateX(120vw) translateY(-40px);
     opacity: 0;
   }
+}
+
+/* ... existing animations ... */
+
+@keyframes pulseNew {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+}
+
+/* =========================================
+   NEW BACKGROUND EFFECTS
+   ========================================= */
+
+/* 1. Perspective Grid Floor */
+.cyber-grid-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 40vh;
+  background:
+    linear-gradient(transparent 50%, rgba(60, 242, 242, 0.03) 50%),
+    linear-gradient(90deg, transparent 50%, rgba(60, 242, 242, 0.03) 50%);
+  background-size: 60px 60px;
+  transform: perspective(600px) rotateX(60deg) scale(2);
+  transform-origin: bottom center;
+  animation: gridMove 20s linear infinite;
+  z-index: -2;
+  pointer-events: none;
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+}
+
+@keyframes gridMove {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 0 60px;
+  }
+}
+
+/* 2. Cinematic Noise Grain */
+.noise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* 3. Cyberpunk Corner Accents */
+.corner-accent {
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(60, 242, 242, 0.3);
+  z-index: 40;
+  pointer-events: none;
+}
+
+.corner-tl {
+  top: 20px;
+  left: 20px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.corner-tr {
+  top: 20px;
+  right: 20px;
+  border-left: 0;
+  border-bottom: 0;
+}
+
+.corner-bl {
+  bottom: 20px;
+  left: 20px;
+  border-right: 0;
+  border-top: 0;
+}
+
+.corner-br {
+  bottom: 20px;
+  right: 20px;
+  border-left: 0;
+  border-top: 0;
+}
+
+/* 4. Floating HUD Text */
+.floating-hud {
+  position: fixed;
+  top: 25%;
+  left: 20px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: rgba(60, 242, 242, 0.3);
+  letter-spacing: 2px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.floating-hud::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 50px;
+  background: rgba(60, 242, 242, 0.3);
+  margin-bottom: 10px;
+  margin-left: 5px;
 }
 
 /* Graph Network Connections (Edges) - Cyan/Teal */

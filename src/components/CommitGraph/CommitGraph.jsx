@@ -6,6 +6,54 @@ import logoHackathon from '../../assets/logo-hackathon.png';
 
 const hours = [7, 8, 9, 10, 11, 12, 13, 14];
 
+/**
+ * Tính toán mảng góc phân bố cho repos dựa trên số lượng
+ * @param {number} total - Tổng số repos
+ * @param {number} offset - Góc offset (radians) để stagger giữa các rings
+ * @returns {number[]} - Mảng các góc (radians)
+ */
+const getFixedAngles = (total, offset = 0) => {
+    if (total === 0) return [];
+
+    if (total === 1) {
+        // 1 repo: đặt ở góc 0° (bên phải)
+        return [0 + offset];
+    }
+
+    if (total === 2) {
+        // 2 repos: đối xứng chéo (tránh line-up ngang)
+        // Đặt ở góc 45° và 225° (top-right và bottom-left)
+        return [Math.PI / 4 + offset, Math.PI + Math.PI / 4 + offset];
+    }
+
+    if (total === 3) {
+        // 3 repos: tam giác đều (120° mỗi node)
+        // Bắt đầu từ -90° để node đầu tiên ở trên
+        return [
+            -Math.PI / 2 + offset,                      // -90° (top)
+            -Math.PI / 2 + (2 * Math.PI / 3) + offset,  // 30° (bottom-right)
+            -Math.PI / 2 + (4 * Math.PI / 3) + offset   // 150° (bottom-left)
+        ];
+    }
+
+    if (total === 4) {
+        // 4 repos: hình vuông (90° mỗi node)
+        return [
+            -Math.PI / 2 + offset,           // -90° (top)
+            0 + offset,                      // 0° (right)
+            Math.PI / 2 + offset,            // 90° (bottom)
+            Math.PI + offset                 // 180° (left)
+        ];
+    }
+
+    // 5+ repos: phân bố đều trên vòng tròn
+    const angles = [];
+    for (let i = 0; i < total; i++) {
+        angles.push((i / total) * 2 * Math.PI - Math.PI / 2 + offset);
+    }
+    return angles;
+};
+
 const CommitGraph = ({ data }) => {
     const svgRef = useRef(null);
 
@@ -34,9 +82,12 @@ const CommitGraph = ({ data }) => {
 
         const repos = [];
 
+        // Get fixed angles for inner ring
+        const innerAngles = getFixedAngles(innerRepos.length);
+
         // Position inner ring repos (HIGH commits - closer)
         innerRepos.forEach((repo, index) => {
-            const angle = (index / innerRepos.length) * 2 * Math.PI - Math.PI / 2;
+            const angle = innerAngles[index];
             const x = centerX + innerRadiusX * Math.cos(angle);
             const y = centerY + innerRadiusY * Math.sin(angle);
             const repoName = getRepoShortName(repo.repo_full_name);
@@ -54,9 +105,14 @@ const CommitGraph = ({ data }) => {
             });
         });
 
+        // Get fixed angles for outer ring with offset to stagger
+        // Offset by half the angle between outer nodes to prevent line-up
+        const outerOffset = outerRepos.length > 0 ? Math.PI / outerRepos.length : 0;
+        const outerAngles = getFixedAngles(outerRepos.length, outerOffset);
+
         // Position outer ring repos (LOW commits - farther)
         outerRepos.forEach((repo, index) => {
-            const angle = (index / outerRepos.length) * 2 * Math.PI - Math.PI / 2 + Math.PI / outerRepos.length; // Offset for stagger
+            const angle = outerAngles[index];
             const x = centerX + outerRadiusX * Math.cos(angle);
             const y = centerY + outerRadiusY * Math.sin(angle);
             const repoName = getRepoShortName(repo.repo_full_name);
@@ -161,6 +217,21 @@ const CommitGraph = ({ data }) => {
                         opacity="0.9"
                     />
 
+                    {/* Draw node indicators FIRST (behind everything) */}
+                    {graphData.repos.map((repo, index) => (
+                        <circle
+                            key={`indicator-${index}`}
+                            cx={repo.x}
+                            cy={repo.y}
+                            r="9"
+                            fill="#4cc9f0"
+                            stroke="#ffffff"
+                            strokeWidth="3"
+                            opacity="0.8"
+                            style={{ filter: "drop-shadow(0 0 5px #4cc9f0)" }}
+                        />
+                    ))}
+
                     {/* Draw repo nodes */}
                     {graphData.repos.map((repo, index) => {
                         // Label offset - push outward based on angle
@@ -218,17 +289,6 @@ const CommitGraph = ({ data }) => {
                                 style={{ cursor: 'pointer', transformOrigin: 'center' }}
                                 className="hover:opacity-80 transition-opacity"
                             >
-                                {/* Node indicator - small circle at original position */}
-                                <circle
-                                    cx={repo.x}
-                                    cy={repo.y}
-                                    r="9"
-                                    fill="#4cc9f0"
-                                    stroke="#ffffff"
-                                    strokeWidth="3"
-                                    opacity="0.8"
-                                    style={{ filter: "drop-shadow(0 0 5px #4cc9f0)" }}
-                                />
 
                                 {/* Crown for Top 1 */}
                                 {isTop1 && (

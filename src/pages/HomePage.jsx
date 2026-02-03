@@ -99,7 +99,7 @@ const HomePage = () => {
               animationDelay: `${Math.random() * 4}s`,
               animationDuration: `${4 + Math.random() * 2}s`,
               fontSize: `${12 + Math.random() * 6}px`,
-              color: i % 3 === 0 ? '#00ff88' : i % 3 === 1 ? '#00ffff' : '#ff00ff'
+              color: i % 3 === 0 ? '#3CF2F2' : i % 3 === 1 ? '#2ED8D8' : '#6AF7FF'
             }}
           >
             {Math.random() > 0.5 ? '1' : '0'}
@@ -158,8 +158,10 @@ const HomePage = () => {
         ></div>
       ))}
 
-      {/* Scanning Line */}
+      {/* Scanning Lines */}
       <div className="scan-line"></div>
+      <div className="scan-line" style={{ animationDelay: '-2s', opacity: 0.4, height: '6px', filter: 'blur(6px)' }}></div>
+      <div className="scan-line" style={{ animationDelay: '-4s', opacity: 0.3, height: '4px', filter: 'blur(8px)' }}></div>
 
       {/* Main content with enhanced glassmorphism */}
       <div className="relative z-10 px-7">
@@ -167,32 +169,32 @@ const HomePage = () => {
         {commits && commits.length > 0 ? (
           <CommitGraph data={commits} />
         ) : (
-          <div className="text-fuchsia-300 font-mono select-none p-8">
+          <div className="text-primary-dim font-mono select-none p-8">
             {/* Loading/Empty State */}
             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
               {/* Animated loading spinner */}
               <div className="relative">
-                <div className="w-16 h-16 border-4 border-fuchsia-500/30 border-t-fuchsia-400 rounded-full animate-spin"></div>
-                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-cyan-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-cyan-200 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
               </div>
 
               {/* Loading text with typing effect */}
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-bold text-fuchsia-400 animate-pulse">
+                <h3 className="text-xl font-bold text-primary-glow animate-pulse">
                   INITIALIZING HACKATHON DASHBOARD...
                 </h3>
-                <p className="text-violet-300 text-sm">
+                <p className="text-text-muted text-sm">
                   Connecting to repositories<span className="animate-pulse">...</span>
                 </p>
               </div>
 
               {/* Progress bar */}
-              <div className="w-64 h-2 bg-gray-900 rounded-full overflow-hidden border border-gray-800">
-                <div className="h-full bg-gradient-to-r from-fuchsia-600 to-cyan-500 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              <div className="w-64 h-2 bg-cosmic-card rounded-full overflow-hidden border border-cosmic-section">
+                <div className="h-full bg-gradient-to-r from-primary-dim to-primary-glow rounded-full animate-pulse" style={{ width: '60%' }}></div>
               </div>
 
               {/* Decorative elements */}
-              <div className="flex space-x-4 text-xs text-fuchsia-500/50">
+              <div className="flex space-x-4 text-xs text-primary/50">
                 <span className="animate-pulse">LOADING...</span>
                 <span className="animate-pulse" style={{ animationDelay: '0.5s' }}>SCANNING...</span>
                 <span className="animate-pulse" style={{ animationDelay: '1s' }}>ANALYZING...</span>

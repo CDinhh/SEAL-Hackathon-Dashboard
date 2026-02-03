@@ -76,8 +76,8 @@ const CountdownClock = () => {
     return (
         <div className="flex flex-row items-center justify-center space-x-10 pb-2">
             {/* Time Display */}
-            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 
-                bg-clip-text text-transparent font-mono drop-shadow-[0_0_30px_rgba(59,130,246,0.8)]">
+            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-500 
+                bg-clip-text text-transparent font-mono drop-shadow-[0_0_30px_rgba(247,37,133,0.8)]">
                 {formatTime(remaining)}
             </h1>
 
@@ -86,12 +86,12 @@ const CountdownClock = () => {
                 <button
                     onClick={handleStart}
                     className="relative px-7 py-3 rounded-2xl font-bold text-white text-sm font-mono tracking-wider
-                        backdrop-blur-md bg-white/5 border-2 border-green-500 hover:bg-green-500/20
-                        hover:scale-110 hover:shadow-2xl active:scale-95 transition-all duration-500"
+                        backdrop-blur-md bg-white/5 border-2 border-cyan-400 hover:bg-cyan-400/20
+                        hover:scale-110 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)] active:scale-95 transition-all duration-500"
                 >
-                    <div className="absolute inset-0 opacity-0 hover:opacity-20 bg-green-500 transition-opacity duration-500"></div>
+                    <div className="absolute inset-0 opacity-0 hover:opacity-20 bg-cyan-400 transition-opacity duration-500"></div>
                     <span className="relative flex items-center gap-3">
-                        <div className="w-0 h-0 border-l-[12px] border-l-green-500 border-y-[6px] border-y-transparent"></div>
+                        <div className="w-0 h-0 border-l-[12px] border-l-cyan-400 border-y-[6px] border-y-transparent"></div>
                         START
                     </span>
                 </button>
@@ -99,12 +99,12 @@ const CountdownClock = () => {
                 <button
                     onClick={handleReset}
                     className="relative px-7 py-3 rounded-2xl font-bold text-white text-sm font-mono tracking-wider
-                        backdrop-blur-md bg-white/5 border-2 border-red-500 hover:bg-red-500/20
-                        hover:scale-110 hover:shadow-2xl active:scale-95 transition-all duration-500"
+                        backdrop-blur-md bg-white/5 border-2 border-pink-500 hover:bg-pink-500/20
+                        hover:scale-110 hover:shadow-[0_0_20px_rgba(236,72,153,0.5)] active:scale-95 transition-all duration-500"
                 >
-                    <div className="absolute inset-0 opacity-0 hover:opacity-20 bg-red-500 transition-opacity duration-500"></div>
+                    <div className="absolute inset-0 opacity-0 hover:opacity-20 bg-pink-500 transition-opacity duration-500"></div>
                     <span className="relative flex items-center gap-3">
-                        <div className="w-3 h-3 bg-red-500 rounded-sm animate-pulse"></div>
+                        <div className="w-3 h-3 bg-pink-500 rounded-sm animate-pulse"></div>
                         RESET
                     </span>
                 </button>

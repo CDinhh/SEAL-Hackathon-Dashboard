@@ -127,11 +127,11 @@ const CommitGraph = ({ data }) => {
                         />
                     ))}
 
-                    {/* Draw center node */}
+                    {/* Draw center node - Cosmic Gradient */}
                     <defs>
                         <radialGradient id="centerGradient">
-                            <stop offset="0%" stopColor="#00d9ff" />
-                            <stop offset="100%" stopColor="#0066ff" />
+                            <stop offset="0%" stopColor="#f72585" />
+                            <stop offset="100%" stopColor="#7209b7" />
                         </radialGradient>
                     </defs>
                     <circle
@@ -139,9 +139,10 @@ const CommitGraph = ({ data }) => {
                         cy={graphData.center.y}
                         r={graphData.center.size}
                         fill="url(#centerGradient)"
-                        stroke="#00d9ff"
+                        stroke="#f72585"
                         strokeWidth="3"
                         opacity="0.9"
+                        style={{ filter: "drop-shadow(0 0 15px #7209b7)" }}
                     />
 
                     {/* Center logo */}
@@ -172,15 +173,15 @@ const CommitGraph = ({ data }) => {
                             ? repo.repoName.substring(0, 12) + '..'
                             : repo.repoName;
 
-                        // GitHub Heatmap Color Scale
+                        // Cosmic Heatmap Color Scale (Green for commits)
                         const maxCommits = Math.max(...graphData.repos.map(r => r.commits));
                         const getHeatmapColor = (count) => {
-                            if (count === 0) return '#161b22'; // Empty
+                            if (count === 0) return '#1a0b2e'; // Empty (Dark Void - Keeping theme background)
                             const ratio = count / maxCommits;
-                            if (ratio < 0.25) return '#0e4429'; // Level 1
-                            if (ratio < 0.5) return '#006d32';  // Level 2
-                            if (ratio < 0.75) return '#26a641'; // Level 3
-                            return '#39d353';                   // Level 4 (Brightest)
+                            if (ratio < 0.25) return '#0e4429'; // Level 1 (Dark Green)
+                            if (ratio < 0.5) return '#006d32';  // Level 2 (Medium Green)
+                            if (ratio < 0.75) return '#26a641'; // Level 3 (Light Green)
+                            return '#39d353';                   // Level 4 (Neon Green)
                         };
 
                         const badgeColor = getHeatmapColor(repo.commits);
@@ -198,10 +199,11 @@ const CommitGraph = ({ data }) => {
                                     cx={repo.x}
                                     cy={repo.y}
                                     r="9"
-                                    fill="#00d9ff"
+                                    fill="#4cc9f0"
                                     stroke="#ffffff"
                                     strokeWidth="3"
                                     opacity="0.8"
+                                    style={{ filter: "drop-shadow(0 0 5px #4cc9f0)" }}
                                 />
 
                                 {/* Crown for Top 1 */}
@@ -227,10 +229,11 @@ const CommitGraph = ({ data }) => {
                                     height={rectHeight}
                                     rx="12"
                                     ry="12"
-                                    fill="rgba(30, 30, 50, 0.95)"
+                                    fill="rgba(20, 10, 35, 0.95)"
                                     stroke={repo.color}
                                     strokeWidth="2"
                                     opacity="0.95"
+                                    style={{ filter: "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))" }}
                                 />
                                 {/* Repo name - top part with team color */}
                                 <text
@@ -243,7 +246,7 @@ const CommitGraph = ({ data }) => {
                                 >
                                     {displayRepoName}
                                 </text>
-                                {/* Commit count badge - green background */}
+                                {/* Commit count badge - cosmic background */}
                                 <rect
                                     x={labelX - 58}
                                     y={labelY + 10}
@@ -258,7 +261,7 @@ const CommitGraph = ({ data }) => {
                                     x={labelX}
                                     y={labelY + 38}
                                     textAnchor="middle"
-                                    fill={repo.commits > maxCommits * 0.75 ? '#000000' : '#ffffff'}
+                                    fill={'#ffffff'}
                                     fontSize="26"
                                     fontWeight="bold"
                                 >
@@ -274,7 +277,7 @@ const CommitGraph = ({ data }) => {
 
             </div>
 
-            {/* Timeline - Compact display */}
+            {/* Timeline - Compact display with Green/Cosmic Fusion */}
             <div className="">
                 <div className="flex gap-1.5 justify-end flex-wrap mb-3">
                     {timelineData.map(({ hour, commits }) => {
@@ -285,18 +288,19 @@ const CommitGraph = ({ data }) => {
                             <motion.div
                                 key={hour}
                                 whileHover={{ scale: 1.05, y: -2 }}
-                                className="px-2 py-1 rounded font-bold transition-all bg-gray-800 border border-gray-600"
+                                className="px-2 py-1 rounded font-bold transition-all bg-gray-900 border border-green-900"
                                 style={{
                                     background: commits > 0
-                                        ? `linear-gradient(135deg, rgba(6, 182, 212, ${0.2 + intensity * 0.8}), rgba(59, 130, 246, ${0.2 + intensity * 0.8}))`
-                                        : 'rgb(31, 41, 55)',
+                                        ? `linear-gradient(135deg, rgba(38, 166, 65, ${0.2 + intensity * 0.8}), rgba(57, 211, 83, ${0.2 + intensity * 0.8}))`
+                                        : 'rgb(20, 10, 30)',
                                     borderColor: commits > 0
-                                        ? `rgba(6, 182, 212, ${0.3 + intensity * 0.7})`
-                                        : 'rgb(75, 85, 99)',
+                                        ? `rgba(57, 211, 83, ${0.3 + intensity * 0.7})`
+                                        : 'rgb(40, 20, 60)',
+                                    boxShadow: commits > 0 ? `0 0 ${5 + intensity * 10}px rgba(57, 211, 83, 0.3)` : 'none'
                                 }}
                             >
                                 <div className="text-xs font-bold text-white">{hour}:00</div>
-                                <div className={`text-[10px] ${commits > 0 ? 'text-cyan-300' : 'text-gray-500'}`}>
+                                <div className={`text-[10px] ${commits > 0 ? 'text-green-300' : 'text-gray-600'}`}>
                                     {commits}
                                 </div>
                             </motion.div>

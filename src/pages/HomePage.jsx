@@ -69,14 +69,23 @@ const HomePage = () => {
   return (
     <div className='h-screen overflow-hidden relative p-5'>
 
-      {/* Enhanced Circuit Lines */}
-      <div className="circuit-lines">
-        <div className="circuit-line horizontal" style={{ top: '15%', animationDelay: '0s' }}></div>
-        <div className="circuit-line horizontal" style={{ top: '45%', animationDelay: '1.5s' }}></div>
-        <div className="circuit-line horizontal" style={{ top: '75%', animationDelay: '3s' }}></div>
-        <div className="circuit-line vertical" style={{ left: '20%', animationDelay: '2s' }}></div>
-        <div className="circuit-line vertical" style={{ left: '50%', animationDelay: '0.5s' }}></div>
-        <div className="circuit-line vertical" style={{ left: '80%', animationDelay: '2.5s' }}></div>
+      {/* Graph Network Background */}
+      <div className="network-lines">
+        {/* Generate random graph edges */}
+        {Array.from({ length: 15 }, (_, i) => (
+          <div
+            key={`net-line-${i}`}
+            className="network-line"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: `${100 + Math.random() * 300}px`,
+              transform: `rotate(${Math.random() * 360}deg)`,
+              animationDelay: `${Math.random() * 5}s`,
+              opacity: 0.2 + Math.random() * 0.3
+            }}
+          ></div>
+        ))}
       </div>
 
       {/* Enhanced Binary Rain */}
@@ -122,10 +131,10 @@ const HomePage = () => {
             style={{
               top: `${10 + i * 8}%`,
               animationDelay: `${Math.random() * 6}s`,
-              animationDuration: `${5 + Math.random() * 3}s`
+              animationDuration: `${15 + Math.random() * 3}s`
             }}
           >
-            {['</>', '{}', '[]', '()', '&lt;', '&gt;', '//'][Math.floor(Math.random() * 7)]}
+            {['</>', '{}', '[]', '()', 'git;', 'commit;', '//'][Math.floor(Math.random() * 7)]}
           </div>
         ))}
       </div>
@@ -158,32 +167,32 @@ const HomePage = () => {
         {commits && commits.length > 0 ? (
           <CommitGraph data={commits} />
         ) : (
-          <div className="text-cyan-300 font-mono select-non p-8">
+          <div className="text-fuchsia-300 font-mono select-none p-8">
             {/* Loading/Empty State */}
             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
               {/* Animated loading spinner */}
               <div className="relative">
-                <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
-                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-pink-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                <div className="w-16 h-16 border-4 border-fuchsia-500/30 border-t-fuchsia-400 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-cyan-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
               </div>
 
               {/* Loading text with typing effect */}
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-bold text-cyan-400 animate-pulse">
+                <h3 className="text-xl font-bold text-fuchsia-400 animate-pulse">
                   INITIALIZING HACKATHON DASHBOARD...
                 </h3>
-                <p className="text-pink-300 text-sm">
+                <p className="text-violet-300 text-sm">
                   Connecting to repositories<span className="animate-pulse">...</span>
                 </p>
               </div>
 
               {/* Progress bar */}
-              <div className="w-64 h-2 bg-gray-800 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-cyan-500 to-pink-500 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              <div className="w-64 h-2 bg-gray-900 rounded-full overflow-hidden border border-gray-800">
+                <div className="h-full bg-gradient-to-r from-fuchsia-600 to-cyan-500 rounded-full animate-pulse" style={{ width: '60%' }}></div>
               </div>
 
               {/* Decorative elements */}
-              <div className="flex space-x-4 text-xs text-cyan-500/50">
+              <div className="flex space-x-4 text-xs text-fuchsia-500/50">
                 <span className="animate-pulse">LOADING...</span>
                 <span className="animate-pulse" style={{ animationDelay: '0.5s' }}>SCANNING...</span>
                 <span className="animate-pulse" style={{ animationDelay: '1s' }}>ANALYZING...</span>

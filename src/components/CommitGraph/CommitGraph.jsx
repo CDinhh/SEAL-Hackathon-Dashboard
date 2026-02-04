@@ -1,5 +1,5 @@
-import React, { useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { getTeamColor, getRepoShortName } from '../../utils/converCommitToHeapmap.js';
 import logoHackathon from '../../assets/logo-hackathon.png';
@@ -54,8 +54,73 @@ const getFixedAngles = (total, offset = 0) => {
     return angles;
 };
 
+/**
+ * Component: Energy Pulse - Hiệu ứng năng lượng chạy trên line
+ */
+const EnergyPulse = ({ centerX, centerY, targetX, targetY, color }) => {
+    return (
+        <motion.circle
+            cx={centerX}
+            cy={centerY}
+            r="12"
+            fill={color}
+            opacity="0"
+            style={{ filter: `drop-shadow(0 0 15px ${color})` }}
+            initial={{ cx: centerX, cy: centerY, opacity: 0, r: 12 }}
+            animate={{
+                cx: targetX,
+                cy: targetY,
+                opacity: [0, 1, 1, 0.5],
+                r: [12, 18, 15, 10],
+            }}
+            transition={{
+                duration: 0.8,
+                delay: 0.3,
+                ease: [0.25, 0.1, 0.25, 1],
+            }}
+        />
+    );
+};
+
 const CommitGraph = ({ data }) => {
     const svgRef = useRef(null);
+    const [activeCommits, setActiveCommits] = useState([]);
+    const prevDataRef = useRef(null);
+
+    // Detect new commits
+    useEffect(() => {
+        if (!data || !prevDataRef.current) {
+            prevDataRef.current = data;
+            return;
+        }
+
+        const newCommits = [];
+        data.forEach((repo, index) => {
+            const prevRepo = prevDataRef.current.find(r => r.repo_full_name === repo.repo_full_name);
+            if (prevRepo && repo.total_commits > prevRepo.total_commits) {
+                newCommits.push({
+                    repoIndex: index,
+                    repoName: repo.repo_full_name,
+                    timestamp: Date.now(),
+                    id: `${repo.repo_full_name}-${Date.now()}`,
+                });
+            }
+        });
+
+        if (newCommits.length > 0) {
+            setActiveCommits(prev => [...prev, ...newCommits]);
+        }
+
+        prevDataRef.current = data;
+    }, [data]);
+
+    // Auto-cleanup old commits
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveCommits(prev => prev.filter(c => Date.now() - c.timestamp < 1000));
+        }, 100);
+        return () => clearInterval(interval);
+    }, []);
 
     // Calculate positions for nodes
     const graphData = useMemo(() => {
@@ -189,6 +254,25 @@ const CommitGraph = ({ data }) => {
                         />
                     ))}
 
+                    {/* ========== ANIMATION LAYER: Energy Pulses ========== */}
+                    <AnimatePresence>
+                        {activeCommits.map((commit) => {
+                            const targetRepo = graphData.repos.find(r => r.fullName === commit.repoName);
+                            if (!targetRepo) return null;
+
+                            return (
+                                <EnergyPulse
+                                    key={commit.id}
+                                    centerX={graphData.center.x}
+                                    centerY={graphData.center.y}
+                                    targetX={targetRepo.x}
+                                    targetY={targetRepo.y}
+                                    color={targetRepo.color}
+                                />
+                            );
+                        })}
+                    </AnimatePresence>
+
                     {/* Draw center node - Cosmic Gradient */}
                     <defs>
                         <radialGradient id="centerGradient">
@@ -196,7 +280,30 @@ const CommitGraph = ({ data }) => {
                             <stop offset="100%" stopColor="#7209b7" />
                         </radialGradient>
                     </defs>
-                    <circle
+
+                    {/* Center Pulse Ring (Phase 1) */}
+                    {activeCommits.length > 0 && (
+                        <motion.circle
+                            cx={graphData.center.x}
+                            cy={graphData.center.y}
+                            r={graphData.center.size}
+                            fill="none"
+                            stroke="#f72585"
+                            strokeWidth="4"
+                            initial={{ r: graphData.center.size, opacity: 0.8 }}
+                            animate={{
+                                r: graphData.center.size + 40,
+                                opacity: 0,
+                            }}
+                            transition={{
+                                duration: 1.0,
+                                ease: "easeOut",
+                            }}
+                        />
+                    )}
+
+                    {/* Center Node with Pulse */}
+                    <motion.circle
                         cx={graphData.center.x}
                         cy={graphData.center.y}
                         r={graphData.center.size}
@@ -205,6 +312,18 @@ const CommitGraph = ({ data }) => {
                         strokeWidth="3"
                         opacity="0.9"
                         style={{ filter: "drop-shadow(0 0 15px #7209b7)" }}
+                        animate={activeCommits.length > 0 ? {
+                            scale: [1, 1.15, 1],
+                            filter: [
+                                "drop-shadow(0 0 15px #7209b7)",
+                                "drop-shadow(0 0 35px #f72585)",
+                                "drop-shadow(0 0 15px #7209b7)",
+                            ],
+                        } : {}}
+                        transition={{
+                            duration: 0.5,
+                            ease: "easeOut",
+                        }}
                     />
 
                     {/* Center logo */}
@@ -264,31 +383,67 @@ const CommitGraph = ({ data }) => {
                         const badgeColor = getHeatmapColor(repo.commits);
                         const isTop1 = repo.commits === maxCommits && maxCommits > 0;
 
+                        // Check if this repo has active commit
+                        const hasActiveCommit = activeCommits.some(c => c.repoName === repo.fullName);
+
                         return (
                             <motion.g
                                 key={`node-${index}`}
                                 initial={{ opacity: 0, scale: 0 }}
-                                animate={{ opacity: 1, scale: 1, y: [0, -15, 0] }}
+                                animate={{
+                                    opacity: 1,
+                                    scale: hasActiveCommit ? [1, 1.2, 1] : 1,
+                                    y: hasActiveCommit ? [0, -15, 0] : [0, -15, 0],
+                                }}
                                 whileHover={{ scale: 1.1 }}
                                 transition={{
-                                    default: { // For entrance
+                                    default: {
                                         duration: 0.5,
                                         delay: index * 0.1 + 0.35,
                                         type: "spring",
                                         stiffness: 260,
                                         damping: 20
                                     },
-                                    y: { // For floating loop
-                                        duration: 4 + (index % 3), // Random-ish duration 4-6s
-                                        repeat: Infinity,
+                                    y: {
+                                        duration: hasActiveCommit ? 0.5 : 4 + (index % 3),
+                                        repeat: hasActiveCommit ? 0 : Infinity,
                                         ease: "easeInOut",
-                                        delay: index * 0.2 // delay start of float slightly
+                                        delay: hasActiveCommit ? 0.8 : index * 0.2,
+                                    },
+                                    scale: {
+                                        duration: 0.5,
+                                        delay: 0.8,
+                                        ease: "easeOut",
                                     }
                                 }}
                                 onClick={() => handleNodeClick(repo.fullName)}
                                 style={{ cursor: 'pointer', transformOrigin: 'center' }}
                                 className="hover:opacity-80 transition-opacity"
                             >
+                                {/* Repo Pulse Ring (giống center node) */}
+                                {hasActiveCommit && (
+                                    <motion.rect
+                                        x={rectX - 10}
+                                        y={rectY - 10}
+                                        width={rectWidth + 20}
+                                        height={rectHeight + 20}
+                                        rx="18"
+                                        ry="18"
+                                        fill="none"
+                                        stroke={repo.color}
+                                        strokeWidth="3"
+                                        initial={{ opacity: 0.8 }}
+                                        animate={{
+                                            opacity: 0,
+                                            strokeWidth: [3, 1, 0],
+                                        }}
+                                        transition={{
+                                            duration: 1.0,
+                                            delay: 0.8,
+                                            ease: "easeOut",
+                                        }}
+                                    />
+                                )}
 
                                 {/* Crown for Top 1 */}
                                 {isTop1 && (
@@ -304,7 +459,7 @@ const CommitGraph = ({ data }) => {
                                 )}
 
                                 {/* Label rectangle - positioned radially */}
-                                <rect
+                                <motion.rect
                                     x={rectX}
                                     y={rectY}
                                     width={rectWidth}
@@ -316,6 +471,18 @@ const CommitGraph = ({ data }) => {
                                     strokeWidth={isTop1 ? "3" : "2"}
                                     opacity="0.95"
                                     style={{ filter: isTop1 ? "drop-shadow(0 0 15px rgba(4, 255, 0, 0.6))" : "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))" }}
+                                    animate={hasActiveCommit ? {
+                                        filter: [
+                                            isTop1 ? "drop-shadow(0 0 15px rgba(4, 255, 0, 0.6))" : "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))",
+                                            `drop-shadow(0 0 25px ${repo.color}) drop-shadow(0 0 45px ${repo.color})`,
+                                            isTop1 ? "drop-shadow(0 0 15px rgba(4, 255, 0, 0.6))" : "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))",
+                                        ],
+                                    } : {}}
+                                    transition={{
+                                        duration: 0.6,
+                                        delay: 0.8,
+                                        ease: "easeOut",
+                                    }}
                                 />
 
                                 {/* Static Border Element for Top 1 (No pulsing) */}
@@ -345,8 +512,8 @@ const CommitGraph = ({ data }) => {
                                 >
                                     {displayRepoName}
                                 </text>
-                                {/* Commit count badge - cosmic background */}
-                                <rect
+                                {/* Commit count badge - WITH FLASH */}
+                                <motion.rect
                                     x={labelX - 58}
                                     y={labelY + 10}
                                     width="116"
@@ -355,6 +522,18 @@ const CommitGraph = ({ data }) => {
                                     ry="8"
                                     fill={isTop1 ? "#00ff15ff" : badgeColor}
                                     opacity="1"
+                                    animate={hasActiveCommit ? {
+                                        fill: [
+                                            isTop1 ? "#00ff15ff" : badgeColor,
+                                            repo.color,
+                                            isTop1 ? "#00ff15ff" : badgeColor,
+                                        ],
+                                    } : {}}
+                                    transition={{
+                                        duration: 0.6,
+                                        delay: 0.8,
+                                        ease: "easeInOut",
+                                    }}
                                 />
                                 <text
                                     x={labelX}

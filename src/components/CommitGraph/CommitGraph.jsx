@@ -85,6 +85,7 @@ const EnergyPulse = ({ centerX, centerY, targetX, targetY, color }) => {
 const CommitGraph = ({ data }) => {
     const svgRef = useRef(null);
     const [activeCommits, setActiveCommits] = useState([]);
+    const [recentActivity, setRecentActivity] = useState([]); // Track commits for 5-minute heat
     const prevDataRef = useRef(null);
 
     // Detect new commits
@@ -98,27 +99,35 @@ const CommitGraph = ({ data }) => {
         data.forEach((repo, index) => {
             const prevRepo = prevDataRef.current.find(r => r.repo_full_name === repo.repo_full_name);
             if (prevRepo && repo.total_commits > prevRepo.total_commits) {
-                newCommits.push({
-                    repoIndex: index,
-                    repoName: repo.repo_full_name,
-                    timestamp: Date.now(),
-                    id: `${repo.repo_full_name}-${Date.now()}`,
-                });
+                // Determine how many new commits came in
+                const diff = repo.total_commits - prevRepo.total_commits;
+                for (let i = 0; i < diff; i++) {
+                    newCommits.push({
+                        repoIndex: index,
+                        repoName: repo.repo_full_name,
+                        timestamp: Date.now(),
+                        id: `${repo.repo_full_name}-${Date.now()}-${i}`,
+                    });
+                }
             }
         });
 
         if (newCommits.length > 0) {
             setActiveCommits(prev => [...prev, ...newCommits]);
+            setRecentActivity(prev => [...prev, ...newCommits]);
         }
 
         prevDataRef.current = data;
     }, [data]);
 
-    // Auto-cleanup old commits
+    // Auto-cleanup loops
     useEffect(() => {
         const interval = setInterval(() => {
-            setActiveCommits(prev => prev.filter(c => Date.now() - c.timestamp < 1000));
-        }, 100);
+            const now = Date.now();
+            // Animation pulses: keep for 1s
+            setActiveCommits(prev => prev.filter(c => now - c.timestamp < 1000));
+            setRecentActivity(prev => prev.filter(c => now - c.timestamp < 300000));
+        }, 1000); // Check every second
         return () => clearInterval(interval);
     }, []);
 
@@ -143,7 +152,7 @@ const CommitGraph = ({ data }) => {
         const innerRadiusX = 600;
         const innerRadiusY = 420;
         const outerRadiusX = 1100;
-        const outerRadiusY = 550; // Reduced to lift bottom nodes up
+        const outerRadiusY = 550;
 
         const repos = [];
 
@@ -233,28 +242,65 @@ const CommitGraph = ({ data }) => {
                     className="w-full h-full"
                     preserveAspectRatio="xMidYMid meet"
                 >
+                    <defs>
+                        <radialGradient id="centerGradient">
+                            <stop offset="0%" stopColor="#f72585" />
+                            <stop offset="50%" stopColor="#7209b7" />
+                            <stop offset="100%" stopColor="#3a0ca3" />
+                        </radialGradient>
+                    </defs>
 
-                    {/* Draw connections from center to repos */}
-                    {graphData.repos.map((repo, index) => (
-                        <motion.line
-                            key={`line-${index}`}
-                            x1={graphData.center.x}
-                            y1={graphData.center.y}
-                            x2={repo.x}
-                            y2={repo.y}
-                            stroke={repo.color}
-                            strokeWidth="2"
-                            initial={{ x2: graphData.center.x, y2: graphData.center.y, opacity: 0 }}
-                            animate={{ x2: repo.x, y2: repo.y, opacity: 0.5 }}
-                            transition={{
-                                duration: 0.4,
-                                delay: index * 0.1,
-                                ease: "easeOut"
-                            }}
-                        />
-                    ))}
+                    {/* === CONNECTIONS LAYER === */}
+                    {graphData.repos.map((repo, index) => {
+                        const recentCount = recentActivity.filter(c => c.repoName === repo.fullName).length;
+                        const HEAT_THRESHOLD = 30;
+                        const heatFactor = Math.min(recentCount / HEAT_THRESHOLD, 1);
 
-                    {/* ========== ANIMATION LAYER: Energy Pulses ========== */}
+                        let dynamicColor = repo.color;
+                        if (heatFactor > 0.6) dynamicColor = '#FF0000';
+                        else if (heatFactor > 0.2) dynamicColor = '#FF8800';
+
+                        // Shared Floating Params
+                        const floatDuration = 6 + (index % 4); // 6s to 9s cycle
+                        const floatDelay = index * 0.2;
+
+                        // Floating Keyframes (Relative)
+                        const floatY_rel = [0, -10, 0];
+                        const floatX_rel = [0, 5, -5, 0];
+
+                        return (
+                            <motion.line
+                                key={`line-${index}`}
+                                x1={graphData.center.x}
+                                y1={graphData.center.y}
+                                stroke={dynamicColor}
+                                strokeWidth={heatFactor > 0.2 ? "6" : "3"}
+                                strokeLinecap="round"
+                                initial={{ pathLength: 0, opacity: 0, x2: repo.x, y2: repo.y }}
+                                animate={{
+                                    pathLength: 1,
+                                    opacity: heatFactor > 0.2 ? 1 : 0.7,
+                                    stroke: dynamicColor,
+                                    // Animated absolute positions
+                                    x2: floatX_rel.map(v => repo.x + v),
+                                    y2: floatY_rel.map(v => repo.y + v)
+                                }}
+                                style={{
+                                    filter: `drop-shadow(0 0 8px ${dynamicColor})`
+                                }}
+                                transition={{
+                                    pathLength: { duration: 1.5, delay: index * 0.05, ease: "easeInOut" },
+                                    opacity: { duration: 1.5, delay: index * 0.05 },
+                                    stroke: { duration: 0.5 },
+                                    // Float loop
+                                    x2: { duration: floatDuration, repeat: Infinity, ease: "easeInOut", delay: floatDelay },
+                                    y2: { duration: floatDuration, repeat: Infinity, ease: "easeInOut", delay: floatDelay }
+                                }}
+                            />
+                        );
+                    })}
+
+                    {/* === ENERGY PULSES === */}
                     <AnimatePresence>
                         {activeCommits.map((commit) => {
                             const targetRepo = graphData.repos.find(r => r.fullName === commit.repoName);
@@ -273,299 +319,287 @@ const CommitGraph = ({ data }) => {
                         })}
                     </AnimatePresence>
 
-                    {/* Draw center node - Cosmic Gradient */}
-                    <defs>
-                        <radialGradient id="centerGradient">
-                            <stop offset="0%" stopColor="#f72585" />
-                            <stop offset="100%" stopColor="#7209b7" />
-                        </radialGradient>
-                    </defs>
-
-                    {/* Center Pulse Ring (Phase 1) */}
-                    {activeCommits.length > 0 && (
+                    {/* === CENTER REACTOR NODE === */}
+                    <g transform={`translate(${graphData.center.x}, ${graphData.center.y})`}>
+                        {/* Outer Rotation Ring */}
                         <motion.circle
-                            cx={graphData.center.x}
-                            cy={graphData.center.y}
-                            r={graphData.center.size}
+                            r={graphData.center.size + 40}
+                            fill="none"
+                            stroke="#4cc9f0"
+                            strokeWidth="2"
+                            strokeDasharray="20,20"
+                            opacity="0.3"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                        />
+                        {/* Inner Counter-Rotation Ring */}
+                        <motion.circle
+                            r={graphData.center.size + 15}
                             fill="none"
                             stroke="#f72585"
-                            strokeWidth="4"
-                            initial={{ r: graphData.center.size, opacity: 0.8 }}
-                            animate={{
-                                r: graphData.center.size + 40,
-                                opacity: 0,
-                            }}
-                            transition={{
-                                duration: 1.0,
-                                ease: "easeOut",
-                            }}
-                        />
-                    )}
-
-                    {/* Center Node with Pulse */}
-                    <motion.circle
-                        cx={graphData.center.x}
-                        cy={graphData.center.y}
-                        r={graphData.center.size}
-                        fill="url(#centerGradient)"
-                        stroke="#f72585"
-                        strokeWidth="3"
-                        opacity="0.9"
-                        style={{ filter: "drop-shadow(0 0 15px #7209b7)" }}
-                        animate={activeCommits.length > 0 ? {
-                            scale: [1, 1.15, 1],
-                            filter: [
-                                "drop-shadow(0 0 15px #7209b7)",
-                                "drop-shadow(0 0 35px #f72585)",
-                                "drop-shadow(0 0 15px #7209b7)",
-                            ],
-                        } : {}}
-                        transition={{
-                            duration: 0.5,
-                            ease: "easeOut",
-                        }}
-                    />
-
-                    {/* Center logo */}
-                    <image
-                        href={logoHackathon}
-                        x={graphData.center.x - 90}
-                        y={graphData.center.y - 90}
-                        width="180"
-                        height="180"
-                        opacity="0.9"
-                    />
-
-                    {/* Draw node indicators FIRST (behind everything) */}
-                    {graphData.repos.map((repo, index) => (
-                        <circle
-                            key={`indicator-${index}`}
-                            cx={repo.x}
-                            cy={repo.y}
-                            r="9"
-                            fill="#4cc9f0"
-                            stroke="#ffffff"
                             strokeWidth="3"
-                            opacity="0.8"
-                            style={{ filter: "drop-shadow(0 0 5px #4cc9f0)" }}
+                            strokeDasharray="10, 30"
+                            opacity="0.5"
+                            animate={{ rotate: -360 }}
+                            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                         />
-                    ))}
 
-                    {/* Draw repo nodes */}
+                        {/* Core Pulse Ring (Reaction) */}
+                        {activeCommits.length > 0 && (
+                            <motion.circle
+                                r={graphData.center.size}
+                                fill="none"
+                                stroke="#f72585"
+                                strokeWidth="6"
+                                initial={{ r: graphData.center.size, opacity: 0.8 }}
+                                animate={{
+                                    r: graphData.center.size + 80,
+                                    opacity: 0,
+                                }}
+                                transition={{
+                                    duration: 1.2,
+                                    ease: "easeOut",
+                                }}
+                            />
+                        )}
+
+                        {/* Main Core */}
+                        <motion.circle
+                            r={graphData.center.size}
+                            fill="url(#centerGradient)"
+                            stroke="#f72585"
+                            strokeWidth="4"
+                            style={{ filter: "drop-shadow(0 0 30px #7209b7)" }}
+                            animate={{
+                                scale: activeCommits.length > 0 ? [1, 1.1, 1] : 1,
+                                filter: activeCommits.length > 0
+                                    ? ["drop-shadow(0 0 30px #7209b7)", "drop-shadow(0 0 60px #f72585)", "drop-shadow(0 0 30px #7209b7)"]
+                                    : "drop-shadow(0 0 30px #7209b7)"
+                            }}
+                            transition={{ duration: 0.5 }}
+                        />
+
+                        {/* Logo Image */}
+                        <image
+                            href={logoHackathon}
+                            x="-90"
+                            y="-90"
+                            width="180"
+                            height="180"
+                            opacity="0.95"
+                            style={{ pointerEvents: 'none' }}
+                        />
+                    </g>
+
+                    {/* === REPO NODES === */}
                     {graphData.repos.map((repo, index) => {
-                        // Label offset - push outward based on angle
+                        // Relative layout calculations
                         const labelDistance = 100;
-                        const labelX = repo.x + labelDistance * Math.cos(repo.angle);
-                        const labelY = repo.y + labelDistance * Math.sin(repo.angle);
+                        const localLabelX = labelDistance * Math.cos(repo.angle);
+                        const localLabelY = labelDistance * Math.sin(repo.angle);
 
                         // Rectangle dimensions
                         const rectWidth = 290;
                         const rectHeight = 115;
-                        const rectX = labelX - rectWidth / 2;
-                        const rectY = labelY - rectHeight / 2;
 
-                        // Truncate function
+                        // Center the rect around the label point
+                        const localRectX = localLabelX - rectWidth / 2;
+                        const localRectY = localLabelY - rectHeight / 2;
+
                         const displayRepoName = repo.repoName.length > 15
                             ? repo.repoName.substring(0, 12) + '..'
                             : repo.repoName;
 
-                        // Cosmic Heatmap Color Scale (Green for commits)
                         const maxCommits = Math.max(...graphData.repos.map(r => r.commits));
                         const getHeatmapColor = (count) => {
-                            if (count === 0) return '#1a0b2e'; // Empty (Dark Void - Keeping theme background)
+                            if (count === 0) return '#1a0b2e';
                             const ratio = count / maxCommits;
-                            if (ratio < 0.25) return '#0e4429'; // Level 1 (Dark Green)
-                            if (ratio < 0.5) return '#006d32';  // Level 2 (Medium Green)
-                            if (ratio < 0.75) return '#26a641'; // Level 3 (Light Green)
-                            return '#39d353';                   // Level 4 (Neon Green)
+                            if (ratio < 0.25) return '#0e4429';
+                            if (ratio < 0.5) return '#006d32';
+                            if (ratio < 0.75) return '#26a641';
+                            return '#39d353';
                         };
 
                         const badgeColor = getHeatmapColor(repo.commits);
                         const isTop1 = repo.commits === maxCommits && maxCommits > 0;
+                        const recentCount = recentActivity.filter(c => c.repoName === repo.fullName).length;
+                        const HEAT_THRESHOLD = 30;
+                        const heatFactor = Math.min(recentCount / HEAT_THRESHOLD, 1);
+                        const dynamicScale = 1 + heatFactor * 0.35;
 
-                        // Check if this repo has active commit
+                        let dynamicColor = repo.color;
+                        const baseBlur = 20 + (heatFactor * 60);
+                        const pulseBlur = activeCommits.some(c => c.repoName === repo.fullName) ? 15 : 0;
+                        const finalBlur = baseBlur + pulseBlur;
+
+                        if (heatFactor > 0.6) dynamicColor = '#FF0000';
+                        else if (heatFactor > 0.2) dynamicColor = '#FF8800';
+
                         const hasActiveCommit = activeCommits.some(c => c.repoName === repo.fullName);
+
+                        // Shared Floating Params (Same as Lines)
+                        const floatDuration = 6 + (index % 4);
+                        const floatDelay = index * 0.2;
+                        const floatY_rel = [0, -10, 0];
+                        const floatX_rel = [0, 5, -5, 0];
 
                         return (
                             <motion.g
-                                key={`node-${index}`}
-                                initial={{ opacity: 0, scale: 0 }}
+                                key={`node-${repo.fullName}`}
+                                initial={{
+                                    opacity: 0,
+                                    scale: 0,
+                                    x: graphData.center.x,
+                                    y: graphData.center.y
+                                }}
                                 animate={{
                                     opacity: 1,
-                                    scale: hasActiveCommit ? [1, 1.2, 1] : 1,
-                                    y: hasActiveCommit ? [0, -15, 0] : [0, -15, 0],
+                                    scale: hasActiveCommit ? dynamicScale * 1.1 : dynamicScale,
+                                    x: repo.x,
+                                    y: repo.y
                                 }}
-                                whileHover={{ scale: 1.1 }}
                                 transition={{
                                     default: {
-                                        duration: 0.5,
-                                        delay: index * 0.1 + 0.35,
+                                        duration: 1.0,
+                                        delay: index * 0.1,
                                         type: "spring",
-                                        stiffness: 260,
-                                        damping: 20
-                                    },
-                                    y: {
-                                        duration: hasActiveCommit ? 0.5 : 4 + (index % 3),
-                                        repeat: hasActiveCommit ? 0 : Infinity,
-                                        ease: "easeInOut",
-                                        delay: hasActiveCommit ? 0.8 : index * 0.2,
+                                        bounce: 0.4
                                     },
                                     scale: {
-                                        duration: 0.5,
-                                        delay: 0.8,
-                                        ease: "easeOut",
+                                        // Adjust scale duration here
+                                        duration: 0.3,
+                                        type: "spring",
+                                        bounce: 0.5
                                     }
                                 }}
+                                style={{
+                                    cursor: 'pointer'
+                                }}
                                 onClick={() => handleNodeClick(repo.fullName)}
-                                style={{ cursor: 'pointer', transformOrigin: 'center' }}
-                                className="hover:opacity-80 transition-opacity"
                             >
-                                {/* Repo Pulse Ring (giống center node) */}
-                                {hasActiveCommit && (
-                                    <motion.rect
-                                        x={rectX - 10}
-                                        y={rectY - 10}
-                                        width={rectWidth + 20}
-                                        height={rectHeight + 20}
-                                        rx="18"
-                                        ry="18"
-                                        fill="none"
-                                        stroke={repo.color}
-                                        strokeWidth="3"
-                                        initial={{ opacity: 0.8 }}
-                                        animate={{
-                                            opacity: 0,
-                                            strokeWidth: [3, 1, 0],
-                                        }}
-                                        transition={{
-                                            duration: 1.0,
-                                            delay: 0.8,
-                                            ease: "easeOut",
-                                        }}
-                                    />
-                                )}
-
-                                {/* Crown for Top 1 */}
-                                {isTop1 && (
-                                    <text
-                                        x={rectX + rectWidth / 2}
-                                        y={rectY - 15}
-                                        textAnchor="middle"
-                                        fontSize="48"
-                                        style={{ filter: 'drop-shadow(0 0 10px gold)' }}
-                                    >
-                                        👑
-                                    </text>
-                                )}
-
-                                {/* Label rectangle - positioned radially */}
-                                <motion.rect
-                                    x={rectX}
-                                    y={rectY}
-                                    width={rectWidth}
-                                    height={rectHeight}
-                                    rx="12"
-                                    ry="12"
-                                    fill="rgba(20, 10, 35, 0.95)"
-                                    stroke={isTop1 ? "green" : repo.color}
-                                    strokeWidth={isTop1 ? "3" : "2"}
-                                    opacity="0.95"
-                                    style={{ filter: isTop1 ? "drop-shadow(0 0 15px rgba(4, 255, 0, 0.6))" : "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))" }}
-                                    animate={hasActiveCommit ? {
-                                        filter: [
-                                            isTop1 ? "drop-shadow(0 0 15px rgba(4, 255, 0, 0.6))" : "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))",
-                                            `drop-shadow(0 0 25px ${repo.color}) drop-shadow(0 0 45px ${repo.color})`,
-                                            isTop1 ? "drop-shadow(0 0 15px rgba(4, 255, 0, 0.6))" : "drop-shadow(0 0 10px rgba(114, 9, 183, 0.3))",
-                                        ],
-                                    } : {}}
-                                    transition={{
-                                        duration: 0.6,
-                                        delay: 0.8,
-                                        ease: "easeOut",
+                                {/* Floating Animation Wrapper */}
+                                <motion.g
+                                    animate={{
+                                        y: floatY_rel,
+                                        x: floatX_rel,
+                                        rotate: [0, 1, -1, 0]
                                     }}
-                                />
-
-                                {/* Static Border Element for Top 1 (No pulsing) */}
-                                {isTop1 && (
-                                    <rect
-                                        x={rectX - 5}
-                                        y={rectY - 5}
-                                        width={rectWidth + 10}
-                                        height={rectHeight + 10}
-                                        rx="16"
-                                        ry="16"
-                                        fill="none"
-                                        stroke="green"
-                                        strokeWidth="2"
-                                        opacity="0.5"
-                                    />
-                                )}
-
-                                {/* Repo name - top part with team color */}
-                                <text
-                                    x={labelX}
-                                    y={labelY - 10}
-                                    textAnchor="middle"
-                                    fill={repo.color}
-                                    fontSize="30"
-                                    fontWeight="bold"
-                                >
-                                    {displayRepoName}
-                                </text>
-                                {/* Commit count badge - WITH FLASH */}
-                                <motion.rect
-                                    x={labelX - 58}
-                                    y={labelY + 10}
-                                    width="116"
-                                    height="42"
-                                    rx="8"
-                                    ry="8"
-                                    fill={isTop1 ? "#00ff15ff" : badgeColor}
-                                    opacity="1"
-                                    animate={hasActiveCommit ? {
-                                        fill: [
-                                            isTop1 ? "#00ff15ff" : badgeColor,
-                                            repo.color,
-                                            isTop1 ? "#00ff15ff" : badgeColor,
-                                        ],
-                                    } : {}}
                                     transition={{
-                                        duration: 0.6,
-                                        delay: 0.8,
+                                        duration: floatDuration,
+                                        repeat: Infinity,
                                         ease: "easeInOut",
+                                        delay: floatDelay
                                     }}
-                                />
-                                <text
-                                    x={labelX}
-                                    y={labelY + 38}
-                                    textAnchor="middle"
-                                    fill={isTop1 ? "#000000" : '#ffffff'}
-                                    fontSize="26"
-                                    fontWeight="bold"
                                 >
-                                    {repo.commits}
-                                </text>
+                                    {/* Repo Pulse Ring (Wave Effect) */}
+                                    {hasActiveCommit && (
+                                        <motion.rect
+                                            x={localRectX - 10}
+                                            y={localRectY - 10}
+                                            width={rectWidth + 20}
+                                            height={rectHeight + 20}
+                                            rx="18"
+                                            ry="18"
+                                            fill="none"
+                                            stroke={dynamicColor}
+                                            strokeWidth="3"
+                                            initial={{ opacity: 0.8, scale: 0.9 }}
+                                            animate={{ opacity: 0, scale: 1.4 }} // Increased scale to 1.4 for wider wave
+                                            transition={{
+                                                duration: 2, // Adjust Pulse/Wave duration here
+                                                ease: "easeOut"
+                                            }}
+                                        />
+                                    )}
+
+                                    {/* Crown for Top 1 */}
+                                    {isTop1 && (
+                                        <motion.text
+                                            x={localRectX + rectWidth / 2}
+                                            y={localRectY - 20}
+                                            textAnchor="middle"
+                                            fontSize="48"
+                                            initial={{ y: -10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 1, type: "spring" }}
+                                            style={{ filter: 'drop-shadow(0 0 10px gold)' }}
+                                        >
+                                            👑
+                                        </motion.text>
+                                    )}
+
+                                    {/* Main Card */}
+                                    <motion.rect
+                                        key={dynamicColor}
+                                        x={localRectX}
+                                        y={localRectY}
+                                        width={rectWidth}
+                                        height={rectHeight}
+                                        rx="12"
+                                        ry="12"
+                                        fill="rgba(10, 10, 25, 0.9)"
+                                        stroke={dynamicColor}
+                                        strokeWidth={isTop1 ? "3" : "2"}
+                                        style={{
+                                            filter: `drop-shadow(0 0 ${finalBlur}px ${dynamicColor})`,
+                                            transition: 'filter 0.3s ease-out'
+                                        }}
+                                        whileHover={{ strokeWidth: 4, stroke: "#3CF2F2" }}
+                                    />
+
+                                    {/* Repo Name */}
+                                    <text
+                                        x={localLabelX}
+                                        y={localLabelY - 10}
+                                        textAnchor="middle"
+                                        fill={dynamicColor}
+                                        fontSize="30"
+                                        fontWeight="bold"
+                                        style={{ textShadow: `0 0 10px ${dynamicColor}` }}
+                                    >
+                                        {displayRepoName}
+                                    </text>
+
+                                    {/* Commit Badge */}
+                                    <motion.rect
+                                        x={localLabelX - 58}
+                                        y={localLabelY + 10}
+                                        width={116}
+                                        height={42}
+                                        rx="8"
+                                        fill={badgeColor}
+                                        animate={hasActiveCommit ? { fill: ['#39d353', '#ffffff', '#39d353'] } : {}}
+                                        transition={{ duration: 0.5 }}
+                                    />
+                                    <text
+                                        x={localLabelX}
+                                        y={localLabelY + 38}
+                                        textAnchor="middle"
+                                        fill="#ffffff"
+                                        fontSize="26"
+                                        fontWeight="bold"
+                                    >
+                                        {repo.commits}
+                                    </text>
+                                </motion.g>
                             </motion.g>
                         );
                     })}
                 </svg>
-
-
-
-
             </div>
 
-            {/* Timeline - Compact display with Green/Cosmic Fusion */}
+            {/* Timeline - Compact display */}
             <div className="">
                 <div className="flex gap-1.5 justify-end flex-wrap mb-3">
-                    {timelineData.map(({ hour, commits }) => {
+                    {timelineData.map(({ hour, commits }, i) => {
                         const maxCommits = Math.max(...timelineData.map(t => t.commits));
                         const intensity = maxCommits > 0 ? commits / maxCommits : 0;
-
                         return (
                             <motion.div
                                 key={hour}
-                                whileHover={{ scale: 1.05, y: -2 }}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
                                 className="px-2 py-1 rounded font-bold transition-all bg-gray-900 border border-green-900"
                                 style={{
                                     background: commits > 0
@@ -586,6 +620,31 @@ const CommitGraph = ({ data }) => {
                     })}
                 </div>
             </div>
+
+            {/* Dev Controls */}
+            <div className="absolute bottom-4 left-4 flex flex-col gap-2 p-4 bg-black/90 rounded-lg border border-white/20 z-50 max-h-[400px] w-64 overflow-y-auto shadow-2xl backdrop-blur-md">
+                <h3 className="text-white text-sm font-bold mb-2">Simulate Commit</h3>
+                {graphData.repos.map((repo, i) => (
+                    <button
+                        key={i}
+                        onClick={() => {
+                            const newCommit = {
+                                repoIndex: i,
+                                repoName: repo.fullName,
+                                timestamp: Date.now(),
+                                id: `${repo.fullName}-${Date.now()}-manual`,
+                            };
+                            setActiveCommits(prev => [...prev, newCommit]);
+                            setRecentActivity(prev => [...prev, newCommit]);
+                        }}
+                        className="text-sm px-3 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 transition-colors text-left font-medium flex items-center gap-2 w-full border border-gray-700"
+                        style={{ borderLeft: `4px solid ${repo.color}` }}
+                    >
+                        <span className="truncate">{repo.repoName}</span>
+                    </button>
+                ))}
+            </div>
+
         </div >
     );
 };

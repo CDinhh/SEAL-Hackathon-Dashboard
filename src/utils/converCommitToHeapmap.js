@@ -45,40 +45,21 @@ export function sortReposByLatestCommit(repos = []) {
 }
 
 // 🎨 30 màu OKLCH cố định – tone sáng, contrast cao cho nền tối
-const OKLCH_PALETTE_30 = [
-    "oklch(0.70 0.28 48)",    // Yellow
-    "oklch(0.70 0.28 0)",     // Red
-    "oklch(0.70 0.28 264)",   // Magenta purple
-    "oklch(0.70 0.28 60)",    // Lime yellow
-    "oklch(0.70 0.28 240)",   // Deep violet
-    "oklch(0.70 0.28 180)",   // Pure cyan-blue
-    "oklch(0.70 0.28 132)",   // Sky cyan
-    "oklch(0.70 0.28 72)",    // Yellow-green
-    "oklch(0.70 0.28 216)",   // Blue
-    "oklch(0.70 0.28 312)",   // Rose
-    "oklch(0.70 0.28 36)",    // Warm yellow
-    "oklch(0.70 0.28 84)",    // Green
-    "oklch(0.70 0.28 108)",   // Cyan
-    "oklch(0.70 0.28 120)",   // Aqua
-    "oklch(0.70 0.28 144)",   // Teal
-    "oklch(0.70 0.28 100)",   // Sea green
-    "oklch(0.70 0.28 168)",   // Emerald
-    "oklch(0.70 0.28 192)",   // Azure blue
-    "oklch(0.70 0.28 204)",   // Sky blue
-    "oklch(0.70 0.28 228)",   // Indigo
-    "oklch(0.70 0.28 252)",   // Purple
-    "oklch(0.70 0.28 276)",   // Magenta
-    "oklch(0.70 0.28 288)",   // Hot pink
-    "oklch(0.70 0.28 24)",    // Orange
-    "oklch(0.70 0.28 300)",   // Pink
-    "oklch(0.70 0.28 324)",   // Red-pink
+// 🎨 30 màu Heatmap Gradient (Red -> Orange -> Yellow -> Green -> Blue)
+const HEATMAP_PALETTE = [
+    "#FF0000", "#FF1E00", "#FF3C00", "#FF5A00", "#FF7800", // Red to Orange
+    "#FF9600", "#FFB400", "#FFD200", "#FFF000", "#FFFF00", // Orange to Yellow
+    "#CCFF00", "#99FF00", "#66FF00", "#33FF00", "#00FF00", // Yellow to Green
+    "#00FF33", "#00FF66", "#00FF99", "#00FFCC", "#00FFFF", // Green to Cyan
+    "#00CCFF", "#0099FF", "#0066FF", "#0033FF", "#0000FF", // Cyan to Blue
+    "#3300FF", "#6600FF", "#9900FF", "#CC00FF", "#FF00FF"  // Blue to Magenta
 ];
 
 // 🗺️ Lưu map repo → màu vào localStorage
 export function getTeamColor(teamName) {
     if (!teamName) return '#ccc';
 
-    const storageKey = `team-color-map`;
+    const storageKey = `team-color-map-heatmap-v2`;
     let colorMap = {};
 
     // 🔹 Load từ localStorage
@@ -91,16 +72,33 @@ export function getTeamColor(teamName) {
     // 🔹 Nếu repo đã có màu → trả về luôn
     if (colorMap[teamName]) return colorMap[teamName];
 
-    // 🔹 Nếu chưa có → lấy màu tiếp theo trong palette
+    // 🔹 Chiến thuật chọn màu phân tán (Stride = 5)
+    // Thay vì chọn 0, 1, 2, 3... (tất cả đều đỏ/cam), ta chọn 0, 5, 10, 15... (Đỏ, Vàng, Xanh Lá, Xanh Dương...)
     const usedColors = Object.values(colorMap);
-    const available = OKLCH_PALETTE_30.find(c => !usedColors.includes(c));
-    const color = available || OKLCH_PALETTE_30[usedColors.length % OKLCH_PALETTE_30.length];
+    const STRIDE = 5;
+    let selectedColor = HEATMAP_PALETTE[0];
+
+    // Tạo danh sách ưu tiên chỉ số: [0, 5, 10, 15, 20, 25, 1, 6, 11, ...]
+    const preferredIndices = [];
+    for (let offset = 0; offset < STRIDE; offset++) {
+        for (let i = offset; i < HEATMAP_PALETTE.length; i += STRIDE) {
+            preferredIndices.push(i);
+        }
+    }
+
+    // Tìm màu chưa dùng theo thứ tự ưu tiên
+    for (const index of preferredIndices) {
+        if (!usedColors.includes(HEATMAP_PALETTE[index])) {
+            selectedColor = HEATMAP_PALETTE[index];
+            break;
+        }
+    }
 
     // 🔹 Lưu lại để cố định lần sau (F5 vẫn giữ)
-    colorMap[teamName] = color;
+    colorMap[teamName] = selectedColor;
     localStorage.setItem(storageKey, JSON.stringify(colorMap));
 
-    return color;
+    return selectedColor;
 }
 
 export function getRepoShortName(fullName) {

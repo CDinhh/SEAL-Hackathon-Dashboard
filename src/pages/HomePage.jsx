@@ -186,25 +186,7 @@ const HomePage = () => {
       <div className="relative z-10 px-7">
         <MainHeader />
 
-        {/* Test Commit Button */}
-        {commits && commits.length > 0 && (
-          <div className="fixed top-24 right-8 z-50">
-            <button
-              onClick={() => {
-                const randomRepo = commits[Math.floor(Math.random() * commits.length)];
-                handleNewCommit({
-                  repo_full_name: randomRepo.repo_full_name,
-                  timestamp: new Date().toISOString(),
-                  message: 'Test commit',
-                  author: 'Test User'
-                });
-              }}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 border border-cyan-400/30"
-            >
-              ⚡ Test Animation
-            </button>
-          </div>
-        )}
+
 
         {commits && commits.length > 0 ? (
           <CommitGraph data={commits} />

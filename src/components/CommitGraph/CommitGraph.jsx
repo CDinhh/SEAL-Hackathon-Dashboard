@@ -86,6 +86,7 @@ const CommitGraph = ({ data }) => {
     const svgRef = useRef(null);
     const [activeCommits, setActiveCommits] = useState([]);
     const [recentActivity, setRecentActivity] = useState([]); // Track commits for 5-minute heat
+    const [isSimulateOpen, setIsSimulateOpen] = useState(false); // Trạng thái đóng/mở Dev Controls
     const prevDataRef = useRef(null);
 
     // Detect new commits
@@ -271,9 +272,9 @@ const CommitGraph = ({ data }) => {
     }
 
     return (
-        <div className="w-full flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+        <div className="w-full h-full flex flex-col">
             {/* Graph Container */}
-            <div className="flex-1 relative overflow-hidden">
+            <div className="flex-1 relative overflow-hidden z-[99]">
                 <svg
                     ref={svgRef}
                     viewBox={`0 0 ${graphData.viewBox.width} ${graphData.viewBox.height}`}
@@ -452,7 +453,7 @@ const CommitGraph = ({ data }) => {
                         const getHeatmapColor = (count) => {
                             if (count === 0) return '#1a0b2e'; // Dark Base
                             const ratio = count / maxCommits;
-                            
+
                             // 8-step fine-grained color scale
                             if (ratio <= 0.125) return '#3a0ca3'; // Deep Purple
                             if (ratio <= 0.250) return '#4361ee'; // Royal Blue
@@ -709,9 +710,9 @@ const CommitGraph = ({ data }) => {
                 </svg>
             </div>
 
-            {/* Timeline - Compact display */}
-            <div className="">
-                <div className="flex gap-1.5 justify-end flex-wrap mb-3">
+            {/* Footer Zone (Timeline only) */}
+            <div className="absolute bottom-6 right-6 z-50 pointer-events-auto">
+                <div className="flex gap-1.5 justify-end flex-wrap">
                     {timelineData.map(({ hour, commits }, i) => {
                         const maxCommits = Math.max(...timelineData.map(t => t.commits));
                         const intensity = maxCommits > 0 ? commits / maxCommits : 0;
@@ -742,28 +743,50 @@ const CommitGraph = ({ data }) => {
                 </div>
             </div>
 
-            {/* Dev Controls */}
-            <div className="absolute bottom-4 left-4 flex flex-col gap-2 p-4 bg-black/90 rounded-lg border border-white/20 z-50 max-h-[400px] w-64 overflow-y-auto shadow-2xl backdrop-blur-md">
-                <h3 className="text-white text-sm font-bold mb-2">Simulate Commit</h3>
-                {graphData.repos.map((repo, i) => (
-                    <button
-                        key={i}
-                        onClick={() => {
-                            const newCommit = {
-                                repoIndex: i,
-                                repoName: repo.fullName,
-                                timestamp: Date.now(),
-                                id: `${repo.fullName}-${Date.now()}-manual`,
-                            };
-                            setActiveCommits(prev => [...prev, newCommit]);
-                            setRecentActivity(prev => [...prev, newCommit]);
-                        }}
-                        className="text-sm px-3 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 transition-colors text-left font-medium flex items-center gap-2 w-full border border-gray-700"
-                        style={{ borderLeft: `4px solid ${repo.color}` }}
-                    >
-                        <span className="truncate">{repo.repoName}</span>
-                    </button>
-                ))}
+            {/* Dev Controls Toggle */}
+            <div className="absolute bottom-4 left-4 z-[100] pointer-events-auto flex flex-col items-start gap-2">
+                <AnimatePresence>
+                    {isSimulateOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0, y: 20 }}
+                            animate={{ opacity: 1, height: 'auto', y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: 20 }}
+                            className="flex flex-col gap-2 p-4 bg-black/90 rounded-lg border border-white/20 max-h-[400px] w-64 overflow-y-auto shadow-2xl backdrop-blur-md overflow-hidden"
+                        >
+                            <h3 className="text-white text-sm font-bold mb-2">Simulate Commit</h3>
+                            {graphData.repos.map((repo, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        const newCommit = {
+                                            repoIndex: i,
+                                            repoName: repo.fullName,
+                                            timestamp: Date.now(),
+                                            id: `${repo.fullName}-${Date.now()}-manual`,
+                                        };
+                                        setActiveCommits(prev => [...prev, newCommit]);
+                                        setRecentActivity(prev => [...prev, newCommit]);
+                                    }}
+                                    className="text-sm px-3 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 transition-colors text-left font-medium flex items-center gap-2 w-full border border-gray-700"
+                                    style={{ borderLeft: `4px solid ${repo.color}` }}
+                                >
+                                    <span className="truncate">{repo.repoName}</span>
+                                </button>
+                            ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <button
+                    onClick={() => setIsSimulateOpen(!isSimulateOpen)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 border border-gray-700 hover:border-gray-500 rounded-lg shadow-xl hover:bg-gray-800 transition-all text-white font-bold text-sm"
+                >
+                    <span className="text-cyan-400">⚡</span>
+                    Simulate
+                    <span className="text-gray-400 ml-1 text-xs">
+                        {isSimulateOpen ? '▼' : '▲'}
+                    </span>
+                </button>
             </div>
 
         </div >

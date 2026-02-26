@@ -67,7 +67,7 @@ const HomePage = () => {
 
   useRealtimeCommits(handleNewCommit);
   return (
-    <div className='h-screen overflow-hidden relative p-5'>
+    <div className='h-screen flex flex-col overflow-hidden relative p-5'>
 
       {/* Graph Network Background */}
       <div className="network-lines">
@@ -182,12 +182,11 @@ const HomePage = () => {
         SEC_LEVEL: ALPHA
       </div>
 
-      {/* Main content with enhanced glassmorphism */}
-      <div className="relative z-10 px-7">
-        <MainHeader />
+      {/* Header chỉ hiển thị Logo ở góc trái trên */}
+      <MainHeader />
 
-
-
+      {/* Vùng hiển thị Graph chiếm fullscreen hoàn toàn nhưng flex 1 */}
+      <div className="relative z-0 w-full h-full flex-1">
         {commits && commits.length > 0 ? (
           <CommitGraph data={commits} />
         ) : (
@@ -226,7 +225,7 @@ const HomePage = () => {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default HomePage
+export default HomePage;

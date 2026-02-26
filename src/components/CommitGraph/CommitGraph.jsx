@@ -412,12 +412,18 @@ const CommitGraph = ({ data }) => {
 
                         const maxCommits = Math.max(...graphData.repos.map(r => r.commits));
                         const getHeatmapColor = (count) => {
-                            if (count === 0) return '#1a0b2e';
+                            if (count === 0) return '#1a0b2e'; // Dark Base
                             const ratio = count / maxCommits;
-                            if (ratio < 0.25) return '#0e4429';
-                            if (ratio < 0.5) return '#006d32';
-                            if (ratio < 0.75) return '#26a641';
-                            return '#39d353';
+                            
+                            // 8-step fine-grained color scale
+                            if (ratio <= 0.125) return '#3a0ca3'; // Deep Purple
+                            if (ratio <= 0.250) return '#4361ee'; // Royal Blue
+                            if (ratio <= 0.375) return '#4cc9f0'; // Neon Cyan
+                            if (ratio <= 0.500) return '#2ecc71'; // Neon Green
+                            if (ratio <= 0.625) return '#b4b709ff'; // Bright Yellow-Green (User preference)
+                            if (ratio <= 0.750) return '#f39c12'; // Neon Orange
+                            if (ratio <= 0.875) return '#f72585'; // Neon Pink
+                            return '#ff0054'; // Strong Neon Red for Top
                         };
 
                         const badgeColor = getHeatmapColor(repo.commits);
@@ -453,10 +459,10 @@ const CommitGraph = ({ data }) => {
                         const hasActiveCommit = activeCommits.some(c => c.repoName === repo.fullName);
 
                         // Shared Floating Params (Same as Lines)
-                        const floatDuration = 6 + (index % 4);
-                        const floatDelay = index * 0.2;
-                        const floatY_rel = [0, -10, 0];
-                        const floatX_rel = [0, 5, -5, 0];
+                        const floatDuration = 5 + (index % 3); // Faster 4s to 6s cycle
+                        const floatDelay = index * 0.15;
+                        const floatY_rel = [0, -15, 0]; // Increased vertical amplitude
+                        const floatX_rel = [0, 8, -8, 0]; // Increased horizontal amplitude
 
                         return (
                             <motion.g
@@ -497,7 +503,8 @@ const CommitGraph = ({ data }) => {
                                     animate={{
                                         y: floatY_rel,
                                         x: floatX_rel,
-                                        rotate: [0, 1, -1, 0]
+                                        rotate: [0, 2, -2, 0], // Increased rotation slightly
+                                        scale: [1, 1.02, 1] // Added subtle constant heartbeat pulse
                                     }}
                                     transition={{
                                         duration: floatDuration,
@@ -585,7 +592,7 @@ const CommitGraph = ({ data }) => {
                                         height={42}
                                         rx="8"
                                         fill={badgeColor}
-                                        animate={hasActiveCommit ? { fill: ['#39d353', '#ffffff', '#39d353'] } : {}}
+                                        animate={hasActiveCommit ? { fill: [badgeColor, '#ffffff', badgeColor] } : {}}
                                         transition={{ duration: 0.5 }}
                                     />
                                     <motion.text

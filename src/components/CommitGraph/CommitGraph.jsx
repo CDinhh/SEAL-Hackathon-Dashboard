@@ -516,13 +516,13 @@ const CommitGraph = ({ data }) => {
                                     {isTop1 && (
                                         <motion.text
                                             x={localRectX + rectWidth / 2}
-                                            y={localRectY - 20}
+                                            y={localRectY - 45}
                                             textAnchor="middle"
-                                            fontSize="48"
-                                            initial={{ y: -10, opacity: 0 }}
+                                            fontSize="56"
+                                            initial={{ y: -20, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 1, type: "spring" }}
-                                            style={{ filter: 'drop-shadow(0 0 10px gold)' }}
+                                            style={{ filter: 'drop-shadow(0 0 15px gold)' }}
                                         >
                                             👑
                                         </motion.text>
@@ -531,6 +531,7 @@ const CommitGraph = ({ data }) => {
                                     {/* Main Card */}
                                     <motion.rect
                                         key={dynamicColor}
+                                        className={isTop1 ? "top1-fire-glow" : ""}
                                         x={localRectX}
                                         y={localRectY}
                                         width={rectWidth}
@@ -538,24 +539,25 @@ const CommitGraph = ({ data }) => {
                                         rx="12"
                                         ry="12"
                                         fill="rgba(10, 10, 25, 0.9)"
-                                        stroke={dynamicColor}
-                                        strokeWidth={isTop1 ? "3" : "2"}
-                                        style={{
+                                        stroke={isTop1 ? undefined : dynamicColor}
+                                        strokeWidth={isTop1 ? "4" : "2"}
+                                        style={isTop1 ? {} : {
                                             filter: `drop-shadow(0 0 ${finalBlur}px ${dynamicColor})`,
                                             transition: 'filter 0.3s ease-out'
                                         }}
-                                        whileHover={{ strokeWidth: 4, stroke: "#3CF2F2" }}
+                                        whileHover={isTop1 ? { scale: 1.05 } : { strokeWidth: 4, stroke: "#3CF2F2" }}
                                     />
 
                                     {/* Repo Name */}
                                     <text
+                                        className={isTop1 ? "top1-glitch-text" : ""}
                                         x={localLabelX}
                                         y={localLabelY - 10}
                                         textAnchor="middle"
-                                        fill={dynamicColor}
+                                        fill={isTop1 ? "#FFD700" : dynamicColor}
                                         fontSize="30"
                                         fontWeight="bold"
-                                        style={{ textShadow: `0 0 10px ${dynamicColor}` }}
+                                        style={isTop1 ? { textShadow: `0 0 15px #FFD700, 0 0 30px #FF8800` } : { textShadow: `0 0 10px ${dynamicColor}` }}
                                     >
                                         {displayRepoName}
                                     </text>
@@ -581,6 +583,62 @@ const CommitGraph = ({ data }) => {
                                     >
                                         {repo.commits}
                                     </text>
+
+                                    {/* Tight Holographic/Laser Border for Top 1 */}
+                                    {isTop1 && (
+                                        <g style={{ pointerEvents: 'none' }}>
+                                            {/* Glowing Aura Base */}
+                                            <motion.rect
+                                                x={localRectX - 4}
+                                                y={localRectY - 4}
+                                                width={rectWidth + 8}
+                                                height={rectHeight + 8}
+                                                rx="16"
+                                                ry="16"
+                                                fill="none"
+                                                stroke="#FFD700"
+                                                strokeWidth="3"
+                                                opacity="0.8"
+                                                style={{ filter: 'drop-shadow(0 0 12px #FFD700)' }}
+                                                animate={{ opacity: [0.4, 1, 0.4] }}
+                                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                            />
+                                            {/* Cyan Laser Beam 1 (Clockwise) */}
+                                            <motion.rect
+                                                x={localRectX - 4}
+                                                y={localRectY - 4}
+                                                width={rectWidth + 8}
+                                                height={rectHeight + 8}
+                                                rx="16"
+                                                ry="16"
+                                                fill="none"
+                                                stroke="#3CF2F2"
+                                                strokeWidth="4"
+                                                strokeLinecap="round"
+                                                style={{ filter: 'drop-shadow(0 0 12px #3CF2F2)' }}
+                                                initial={{ pathLength: 0.2, pathOffset: 0 }}
+                                                animate={{ pathOffset: 1 }}
+                                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                            />
+                                            {/* Magenta Laser Beam 2 (Offset by half perimeter) */}
+                                            <motion.rect
+                                                x={localRectX - 4}
+                                                y={localRectY - 4}
+                                                width={rectWidth + 8}
+                                                height={rectHeight + 8}
+                                                rx="16"
+                                                ry="16"
+                                                fill="none"
+                                                stroke="#FF003C"
+                                                strokeWidth="4"
+                                                strokeLinecap="round"
+                                                style={{ filter: 'drop-shadow(0 0 12px #FF003C)' }}
+                                                initial={{ pathLength: 0.2, pathOffset: 0.5 }}
+                                                animate={{ pathOffset: 1.5 }}
+                                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                            />
+                                        </g>
+                                    )}
                                 </motion.g>
                             </motion.g>
                         );

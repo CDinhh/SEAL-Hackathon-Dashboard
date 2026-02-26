@@ -566,3 +566,55 @@ body::after {
     transform: scale(0.95);
   }
 }
+
+/* =========================================
+   TOP 1 FIRE GLOW & GLITCH EFFECT
+   ========================================= */
+
+@keyframes top1FireGlow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 15px #FF3A3A) drop-shadow(0 0 30px #FF8800) drop-shadow(0 0 45px #FFD700);
+    stroke: #FFD700;
+  }
+
+  50% {
+    filter: drop-shadow(0 0 25px #FF3A3A) drop-shadow(0 0 50px #FF8800) drop-shadow(0 0 75px #FFFEA0);
+    stroke: #FFFFFF;
+  }
+}
+
+.top1-fire-glow {
+  animation: top1FireGlow 2s ease-in-out infinite alternate;
+  stroke-width: 4px !important;
+}
+
+@keyframes top1Glitch {
+
+  0%,
+  90%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  92% {
+    transform: translate(-2px, 2px);
+  }
+
+  94% {
+    transform: translate(2px, -2px);
+  }
+
+  96% {
+    transform: translate(-2px, -2px);
+  }
+
+  98% {
+    transform: translate(2px, 2px);
+  }
+}
+
+.top1-glitch-text {
+  animation: top1Glitch 3s infinite;
+}

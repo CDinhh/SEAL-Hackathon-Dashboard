@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { getTeamColor, getRepoShortName } from '../../utils/converCommitToHeapmap.js';
+import { getRepoShortName } from '../../utils/converCommitToHeapmap.js';
 import logoHackathon from '../../assets/logo-hackathon.png';
 
 const hours = [7, 8, 9, 10, 11, 12, 13, 14];
@@ -141,6 +141,38 @@ const CommitGraph = ({ data }) => {
         const centerX = VIEWBOX_WIDTH / 2;
         const centerY = VIEWBOX_HEIGHT / 2;
 
+        // Nội suy màu gradient từ Cold (Xanh dương) -> Hot (Đỏ rực)
+        const getHeatColor = (ratio) => {
+            // Đảm bảo ratio nằm trong [0, 1]
+            const clampedRatio = Math.max(0, Math.min(1, ratio));
+
+            // Màu gốc
+            const colors = [
+                { r: 0, g: 102, b: 255 },    // 0.0 - Xanh dương (Blue - Rất lạnh)
+                { r: 0, g: 255, b: 170 },    // 0.3 - Xanh Ngọc (Cyan - Lạnh)
+                { r: 57, g: 211, b: 83 },    // 0.5 - Xanh Lá (Green - Ấm vừa)
+                { r: 255, g: 215, b: 0 },    // 0.8 - Vàng (Yellow - Nóng)
+                { r: 255, g: 0, b: 0 }       // 1.0 - Đỏ (Red - Rất nóng)
+            ];
+
+            const stops = [0, 0.3, 0.5, 0.8, 1];
+
+            for (let i = 0; i < stops.length - 1; i++) {
+                if (clampedRatio >= stops[i] && clampedRatio <= stops[i + 1]) {
+                    const localRatio = (clampedRatio - stops[i]) / (stops[i + 1] - stops[i]);
+                    const c1 = colors[i];
+                    const c2 = colors[i + 1];
+                    const r = Math.round(c1.r + (c2.r - c1.r) * localRatio);
+                    const g = Math.round(c1.g + (c2.g - c1.g) * localRatio);
+                    const b = Math.round(c1.b + (c2.b - c1.b) * localRatio);
+                    return `rgb(${r}, ${g}, ${b})`;
+                }
+            }
+            return `rgb(${colors[colors.length - 1].r}, ${colors[colors.length - 1].g}, ${colors[colors.length - 1].b})`;
+        };
+
+        const maxCommits = Math.max(0, ...data.map(r => r.total_commits));
+
         // Sort repos by commit count - REVERSED: high commits first
         const sortedRepos = [...data].sort((a, b) => b.total_commits - a.total_commits);
 
@@ -165,7 +197,10 @@ const CommitGraph = ({ data }) => {
             const x = centerX + innerRadiusX * Math.cos(angle);
             const y = centerY + innerRadiusY * Math.sin(angle);
             const repoName = getRepoShortName(repo.repo_full_name);
-            const color = getTeamColor(repoName);
+
+            // Tính toán màu dựa trên tổng số lượng commit
+            const ratio = maxCommits > 0 ? (repo.total_commits / maxCommits) : 0;
+            const color = getHeatColor(ratio);
 
             repos.push({
                 x,
@@ -190,7 +225,10 @@ const CommitGraph = ({ data }) => {
             const x = centerX + outerRadiusX * Math.cos(angle);
             const y = centerY + outerRadiusY * Math.sin(angle);
             const repoName = getRepoShortName(repo.repo_full_name);
-            const color = getTeamColor(repoName);
+
+            // Tính toán màu dựa trên tổng số lượng commit
+            const ratio = maxCommits > 0 ? (repo.total_commits / maxCommits) : 0;
+            const color = getHeatColor(ratio);
 
             repos.push({
                 x,

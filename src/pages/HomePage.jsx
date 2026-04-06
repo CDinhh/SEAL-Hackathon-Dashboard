@@ -166,9 +166,6 @@ const HomePage = () => {
       {/* NEW: Cyber Perspective Grid */}
       <div className="cyber-grid-overlay"></div>
 
-      {/* NEW: Cinematic Noise Grain */}
-      <div className="noise-overlay"></div>
-
       {/* NEW: Corner Accents */}
       <div className="corner-accent corner-tl"></div>
       <div className="corner-accent corner-tr"></div>

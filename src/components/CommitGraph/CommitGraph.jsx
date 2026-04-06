@@ -498,20 +498,6 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                         const heatFactor = Math.min(recentCount / HEAT_THRESHOLD, 1);
                         const dynamicScale = 1 + heatFactor * 0.35;
 
-                        // Tính toán màu cho con số hiển thị (Vận tốc commit)
-                        let numberColor = '#ffffff'; // Mặc định màu trắng
-                        if (recentCount > 0) {
-                            const latestCommitTime = Math.max(...repoRecentActivity.map(c => c.timestamp));
-                            const timeSinceLatest = Date.now() - latestCommitTime;
-                            const fadeRatio = Math.min(timeSinceLatest / 300000, 1); // Trôi qua trong 5 phút (300,000ms)
-
-                            // Từ Vàng rực rỡ (Gold: 255, 215, 0) sang Trắng (255, 255, 255)
-                            const r = 255;
-                            const g = Math.round(215 + (40 * fadeRatio));
-                            const b = Math.round(0 + (255 * fadeRatio));
-                            numberColor = `rgb(${r}, ${g}, ${b})`;
-                        }
-
                         let dynamicColor = repo.color;
                         const baseBlur = 20 + (heatFactor * 60);
                         const pulseBlur = activeCommits.some(c => c.repoName === repo.fullName) ? 15 : 0;
@@ -656,12 +642,13 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                                         x={localLabelX}
                                         y={localLabelY + 38}
                                         textAnchor="middle"
-                                        fill={numberColor}
+                                        fill="#ffffff"
                                         fontSize="26"
                                         fontWeight="bold"
-                                        animate={{ fill: numberColor }}
-                                        transition={{ duration: 1, ease: 'linear' }}
-                                        style={recentCount > 0 ? { textShadow: `0 0 10px ${numberColor}` } : {}}
+                                        stroke="#000000"
+                                        strokeWidth="2.2"
+                                        paintOrder="stroke"
+                                        style={{ textShadow: '0 0 10px #ffffff' }}
                                     >
                                         {repo.commits}
                                     </motion.text>

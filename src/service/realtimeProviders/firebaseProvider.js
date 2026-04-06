@@ -51,6 +51,20 @@ const normalizeCommit = (rawCommit) => {
     };
 };
 
+const addCommitMeta = (snapshot, rawCommit) => {
+    const commit = normalizeCommit(rawCommit);
+
+    if (!commit || typeof commit !== "object") {
+        return commit;
+    }
+
+    return {
+        ...commit,
+        commit_id: commit.commit_id ?? commit.id ?? commit.sha ?? snapshot.key,
+        snapshot_key: snapshot.key,
+    };
+};
+
 export const listenFirebaseCommits = (onNewCommit) => {
     // Giả sử commit của Đại vương được lưu ở path /commits
     const commitsRef = ref(db, "commit");
@@ -59,7 +73,7 @@ export const listenFirebaseCommits = (onNewCommit) => {
 
     // Lắng nghe khi có node con mới được thêm vào
     const unsubscribe = onChildAdded(commitsRef, (snapshot) => {
-        const commit = normalizeCommit(snapshot.val());
+        const commit = addCommitMeta(snapshot, snapshot.val());
         if (commit) {
             console.log("✅ [Firebase] New commit:", commit);
             onNewCommit(commit);
@@ -69,7 +83,7 @@ export const listenFirebaseCommits = (onNewCommit) => {
     const unsubscribeChanged = onChildChanged(commitsRef, (snapshot) => {
         const rawCommit = snapshot.val();
         console.log("🟠 Commit bị cập nhật:", rawCommit);
-        const commit = normalizeCommit(rawCommit);
+        const commit = addCommitMeta(snapshot, rawCommit);
         if (commit) {
             console.log("✅ [Firebase] New commit:", commit);
             onNewCommit(commit);

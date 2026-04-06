@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import CommitGraph from '../components/CommitGraph/CommitGraph'
 import MainHeader from '../components/MainHeader/MainHeader'
 import { useRealtimeCommits } from '../hooks/useRealtimeCommits.js'
@@ -6,8 +6,22 @@ import { useRealtimeCommits } from '../hooks/useRealtimeCommits.js'
 const HomePage = () => {
 
   const [commits, setCommits] = useState([]);
+  const seenCommitIdsRef = useRef(new Set());
+
+  const getCommitKey = (commit) => {
+    return commit?.commit_id ?? commit?.snapshot_key ?? commit?.id ?? commit?.sha ?? `${commit?.repo_full_name ?? ''}:${commit?.commit_message ?? commit?.message ?? ''}:${commit?.timestamp ?? ''}`;
+  };
+
   // Khi có commit mới
   const handleNewCommit = useCallback((newCommit) => {
+    const commitKey = getCommitKey(newCommit);
+
+    if (!commitKey || seenCommitIdsRef.current.has(commitKey)) {
+      return;
+    }
+
+    seenCommitIdsRef.current.add(commitKey);
+
     setCommits((prev) => {
       const foundRepoIndex = prev.findIndex(
         (r) => r.repo_full_name === newCommit.repo_full_name
@@ -64,6 +78,24 @@ const HomePage = () => {
       }
     });
   }, []);
+
+  const handleSimulateCommit = useCallback((repoFullName) => {
+    const now = Date.now();
+
+    handleNewCommit({
+      repo_full_name: repoFullName,
+      repo_name: repoFullName,
+      commit_message: 'Simulated commit',
+      message: 'Simulated commit',
+      author: 'dev-mode',
+      author_name: 'dev-mode',
+      timestamp: now,
+      commit_id: `${repoFullName}-${now}-simulated`,
+      snapshot_key: `${repoFullName}-${now}-simulated`,
+      id: `${repoFullName}-${now}-simulated`,
+      sha: `${repoFullName}-${now}-simulated`,
+    });
+  }, [handleNewCommit]);
 
   useRealtimeCommits(handleNewCommit);
   return (
@@ -185,7 +217,7 @@ const HomePage = () => {
       {/* Vùng hiển thị Graph chiếm fullscreen hoàn toàn nhưng flex 1 */}
       <div className="relative z-0 w-full h-full flex-1">
         {commits && commits.length > 0 ? (
-          <CommitGraph data={commits} />
+          <CommitGraph data={commits} onSimulateCommit={handleSimulateCommit} />
         ) : (
           <div className="text-primary-dim font-mono select-none p-8">
             {/* Loading/Empty State */}

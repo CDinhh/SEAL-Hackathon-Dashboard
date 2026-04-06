@@ -55,6 +55,38 @@ const getFixedAngles = (total, offset = 0) => {
 };
 
 /**
+ * Tạo floating params ổn định theo repo key để line và node luôn đồng bộ,
+ * kể cả khi repos bị reorder sau commit mới.
+ */
+const getStableFloatParams = (repoKey) => {
+    const key = String(repoKey || 'repo');
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+        hash = (hash * 31 + key.charCodeAt(i)) % 100000;
+    }
+
+    const duration = 5 + (hash % 3); // 5s -> 7s
+    const delay = ((hash % 6) * 0.12); // 0 -> 0.6s
+    const ampX = 6 + (hash % 4); // 6 -> 9px
+    const ampY = 10 + (hash % 6); // 10 -> 15px
+
+    return {
+        duration,
+        delay,
+        floatX: [0, ampX, -ampX, 0],
+        floatY: [0, -ampY, 0],
+        rotate: [0, 2, -2, 0],
+    };
+};
+
+const NODE_TRACKING_SPRING = {
+    type: "spring",
+    stiffness: 110,
+    damping: 20,
+    mass: 0.8,
+};
+
+/**
  * Component: Energy Pulse - Hiệu ứng năng lượng chạy trên line
  */
 const EnergyPulse = ({ centerX, centerY, targetX, targetY, color }) => {
@@ -82,7 +114,7 @@ const EnergyPulse = ({ centerX, centerY, targetX, targetY, color }) => {
     );
 };
 
-const CommitGraph = ({ data }) => {
+const CommitGraph = ({ data, onSimulateCommit }) => {
     const svgRef = useRef(null);
     const [activeCommits, setActiveCommits] = useState([]);
     const [recentActivity, setRecentActivity] = useState([]); // Track commits for 5-minute heat
@@ -299,30 +331,24 @@ const CommitGraph = ({ data }) => {
                         if (heatFactor > 0.6) dynamicColor = '#FF0000';
                         else if (heatFactor > 0.2) dynamicColor = '#FF8800';
 
-                        // Shared Floating Params
-                        const floatDuration = 6 + (index % 4); // 6s to 9s cycle
-                        const floatDelay = index * 0.2;
-
-                        // Floating Keyframes (Relative)
-                        const floatY_rel = [0, -10, 0];
-                        const floatX_rel = [0, 5, -5, 0];
+                        const floatParams = getStableFloatParams(repo.fullName);
 
                         return (
                             <motion.line
-                                key={`line-${index}`}
+                                key={`line-${repo.fullName}`}
                                 x1={graphData.center.x}
                                 y1={graphData.center.y}
                                 stroke={dynamicColor}
                                 strokeWidth={heatFactor > 0.2 ? 6 : 3}
                                 strokeLinecap="round"
-                                initial={{ pathLength: 0, opacity: 0, x2: repo.x, y2: repo.y }}
+                                initial={{ pathLength: 0, opacity: 0, x2: graphData.center.x, y2: graphData.center.y }}
                                 animate={{
                                     pathLength: 1,
                                     opacity: heatFactor > 0.2 ? 1 : 0.7,
                                     stroke: dynamicColor,
-                                    // Animated absolute positions
-                                    x2: floatX_rel.map(v => repo.x + v),
-                                    y2: floatY_rel.map(v => repo.y + v)
+                                    // Keep endpoint pinned to current repo position so it always follows reordering.
+                                    x2: repo.x,
+                                    y2: repo.y
                                 }}
                                 style={{
                                     filter: `drop-shadow(0 0 8px ${dynamicColor})`
@@ -331,9 +357,8 @@ const CommitGraph = ({ data }) => {
                                     pathLength: { duration: 1.5, delay: index * 0.05, ease: "easeInOut" },
                                     opacity: { duration: 1.5, delay: index * 0.05 },
                                     stroke: { duration: 0.5 },
-                                    // Float loop
-                                    x2: { duration: floatDuration, repeat: Infinity, ease: "easeInOut", delay: floatDelay },
-                                    y2: { duration: floatDuration, repeat: Infinity, ease: "easeInOut", delay: floatDelay }
+                                    x2: NODE_TRACKING_SPRING,
+                                    y2: NODE_TRACKING_SPRING
                                 }}
                             />
                         );
@@ -497,11 +522,7 @@ const CommitGraph = ({ data }) => {
 
                         const hasActiveCommit = activeCommits.some(c => c.repoName === repo.fullName);
 
-                        // Shared Floating Params (Same as Lines)
-                        const floatDuration = 5 + (index % 3); // Faster 4s to 6s cycle
-                        const floatDelay = index * 0.15;
-                        const floatY_rel = [0, -15, 0]; // Increased vertical amplitude
-                        const floatX_rel = [0, 8, -8, 0]; // Increased horizontal amplitude
+                        const floatParams = getStableFloatParams(repo.fullName);
 
                         return (
                             <motion.g
@@ -519,12 +540,9 @@ const CommitGraph = ({ data }) => {
                                     y: repo.y
                                 }}
                                 transition={{
-                                    default: {
-                                        duration: 1.0,
-                                        delay: index * 0.1,
-                                        type: "spring",
-                                        bounce: 0.4
-                                    },
+                                    x: NODE_TRACKING_SPRING,
+                                    y: NODE_TRACKING_SPRING,
+                                    opacity: { duration: 0.35, delay: index * 0.03 },
                                     scale: {
                                         // Adjust scale duration here
                                         duration: 0.3,
@@ -540,16 +558,16 @@ const CommitGraph = ({ data }) => {
                                 {/* Floating Animation Wrapper */}
                                 <motion.g
                                     animate={{
-                                        y: floatY_rel,
-                                        x: floatX_rel,
-                                        rotate: [0, 2, -2, 0], // Increased rotation slightly
+                                        y: 0,
+                                        x: 0,
+                                        rotate: floatParams.rotate,
                                         scale: [1, 1.02, 1] // Added subtle constant heartbeat pulse
                                     }}
                                     transition={{
-                                        duration: floatDuration,
+                                        duration: floatParams.duration,
                                         repeat: Infinity,
                                         ease: "easeInOut",
-                                        delay: floatDelay
+                                        delay: floatParams.delay
                                     }}
                                 >
                                     {/* Repo Pulse Ring (Wave Effect) */}
@@ -754,25 +772,22 @@ const CommitGraph = ({ data }) => {
                             className="flex flex-col gap-2 p-4 bg-black/90 rounded-lg border border-white/20 max-h-[400px] w-64 overflow-y-auto shadow-2xl backdrop-blur-md overflow-hidden"
                         >
                             <h3 className="text-white text-sm font-bold mb-2">Simulate Commit</h3>
-                            {graphData.repos.map((repo, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => {
-                                        const newCommit = {
-                                            repoIndex: i,
-                                            repoName: repo.fullName,
-                                            timestamp: Date.now(),
-                                            id: `${repo.fullName}-${Date.now()}-manual`,
-                                        };
-                                        setActiveCommits(prev => [...prev, newCommit]);
-                                        setRecentActivity(prev => [...prev, newCommit]);
-                                    }}
-                                    className="text-sm px-3 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 transition-colors text-left font-medium flex items-center gap-2 w-full border border-gray-700"
-                                    style={{ borderLeft: `4px solid ${repo.color}` }}
-                                >
-                                    <span className="truncate">{repo.repoName}</span>
-                                </button>
-                            ))}
+                            {[...graphData.repos]
+                                .sort((a, b) => a.repoName.localeCompare(b.repoName, 'en', { sensitivity: 'base', numeric: true }))
+                                .map((repo) => (
+                                    <button
+                                        key={repo.fullName}
+                                        onClick={() => {
+                                            if (onSimulateCommit) {
+                                                onSimulateCommit(repo.fullName);
+                                            }
+                                        }}
+                                        className="text-sm px-3 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 transition-colors text-left font-medium flex items-center gap-2 w-full border border-gray-700"
+                                        style={{ borderLeft: `4px solid ${repo.color}` }}
+                                    >
+                                        <span className="truncate">{repo.repoName}</span>
+                                    </button>
+                                ))}
                         </motion.div>
                     )}
                 </AnimatePresence>

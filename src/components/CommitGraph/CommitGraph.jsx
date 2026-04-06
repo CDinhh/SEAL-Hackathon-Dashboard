@@ -313,7 +313,7 @@ const CommitGraph = ({ data }) => {
                                 x1={graphData.center.x}
                                 y1={graphData.center.y}
                                 stroke={dynamicColor}
-                                strokeWidth={heatFactor > 0.2 ? "6" : "3"}
+                                strokeWidth={heatFactor > 0.2 ? 6 : 3}
                                 strokeLinecap="round"
                                 initial={{ pathLength: 0, opacity: 0, x2: repo.x, y2: repo.y }}
                                 animate={{
@@ -365,7 +365,7 @@ const CommitGraph = ({ data }) => {
                             r={graphData.center.size + 40}
                             fill="none"
                             stroke="#4cc9f0"
-                            strokeWidth="2"
+                            strokeWidth={2}
                             strokeDasharray="20,20"
                             opacity="0.3"
                             animate={{ rotate: 360 }}
@@ -376,7 +376,7 @@ const CommitGraph = ({ data }) => {
                             r={graphData.center.size + 15}
                             fill="none"
                             stroke="#f72585"
-                            strokeWidth="3"
+                            strokeWidth={3}
                             strokeDasharray="10, 30"
                             opacity="0.5"
                             animate={{ rotate: -360 }}
@@ -389,7 +389,7 @@ const CommitGraph = ({ data }) => {
                                 r={graphData.center.size}
                                 fill="none"
                                 stroke="#f72585"
-                                strokeWidth="6"
+                                strokeWidth={6}
                                 initial={{ r: graphData.center.size, opacity: 0.8 }}
                                 animate={{
                                     r: graphData.center.size + 80,
@@ -407,7 +407,7 @@ const CommitGraph = ({ data }) => {
                             r={graphData.center.size}
                             fill="url(#centerGradient)"
                             stroke="#f72585"
-                            strokeWidth="4"
+                            strokeWidth={4}
                             style={{ filter: "drop-shadow(0 0 30px #7209b7)" }}
                             animate={{
                                 scale: activeCommits.length > 0 ? [1, 1.1, 1] : 1,
@@ -563,7 +563,7 @@ const CommitGraph = ({ data }) => {
                                             ry="18"
                                             fill="none"
                                             stroke={dynamicColor}
-                                            strokeWidth="3"
+                                            strokeWidth={3}
                                             initial={{ opacity: 0.8, scale: 0.9 }}
                                             animate={{ opacity: 0, scale: 1.4 }} // Increased scale to 1.4 for wider wave
                                             transition={{
@@ -601,7 +601,7 @@ const CommitGraph = ({ data }) => {
                                         ry="12"
                                         fill="rgba(10, 10, 25, 0.9)"
                                         stroke={isTop1 ? undefined : dynamicColor}
-                                        strokeWidth={isTop1 ? "4" : "2"}
+                                        strokeWidth={isTop1 ? 4 : 2}
                                         style={isTop1 ? {} : {
                                             filter: `drop-shadow(0 0 ${finalBlur}px ${dynamicColor})`,
                                             transition: 'filter 0.3s ease-out'
@@ -661,7 +661,7 @@ const CommitGraph = ({ data }) => {
                                                 ry="16"
                                                 fill="none"
                                                 stroke="#FFD700"
-                                                strokeWidth="3"
+                                                strokeWidth={3}
                                                 opacity="0.8"
                                                 style={{ filter: 'drop-shadow(0 0 12px #FFD700)' }}
                                                 animate={{ opacity: [0.4, 1, 0.4] }}
@@ -677,7 +677,7 @@ const CommitGraph = ({ data }) => {
                                                 ry="16"
                                                 fill="none"
                                                 stroke="#3CF2F2"
-                                                strokeWidth="4"
+                                                strokeWidth={4}
                                                 strokeLinecap="round"
                                                 style={{ filter: 'drop-shadow(0 0 12px #3CF2F2)' }}
                                                 initial={{ pathLength: 0.2, pathOffset: 0 }}
@@ -694,7 +694,7 @@ const CommitGraph = ({ data }) => {
                                                 ry="16"
                                                 fill="none"
                                                 stroke="#FF003C"
-                                                strokeWidth="4"
+                                                strokeWidth={4}
                                                 strokeLinecap="round"
                                                 style={{ filter: 'drop-shadow(0 0 12px #FF003C)' }}
                                                 initial={{ pathLength: 0.2, pathOffset: 0.5 }}

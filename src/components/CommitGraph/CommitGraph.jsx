@@ -67,15 +67,15 @@ const getStableFloatParams = (repoKey) => {
 
     const duration = 5 + (hash % 3); // 5s -> 7s
     const delay = ((hash % 6) * 0.12); // 0 -> 0.6s
-    const ampX = 6 + (hash % 4); // 6 -> 9px
-    const ampY = 10 + (hash % 6); // 10 -> 15px
+    const ampX = 9 + (hash % 6); // 9 -> 14px
+    const ampY = 14 + (hash % 9); // 14 -> 22px
 
     return {
         duration,
         delay,
         floatX: [0, ampX, -ampX, 0],
         floatY: [0, -ampY, 0],
-        rotate: [0, 2, -2, 0],
+        rotate: [0, 3, -3, 0],
     };
 };
 
@@ -204,22 +204,89 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
             return `rgb(${colors[colors.length - 1].r}, ${colors[colors.length - 1].g}, ${colors[colors.length - 1].b})`;
         };
 
+        const getCommitCount = (repo) => Number(repo.total_commits) || 0;
+
+        const getStableRandomUnit = (repoKey) => {
+            const key = String(repoKey || 'repo');
+            let hash = 0;
+            for (let i = 0; i < key.length; i++) {
+                hash = (hash * 31 + key.charCodeAt(i)) % 100000;
+            }
+            return hash / 100000;
+        };
+
         const maxCommits = Math.max(0, ...data.map(r => r.total_commits));
 
         // Sort repos by commit count - REVERSED: high commits first
         const sortedRepos = [...data].sort((a, b) => b.total_commits - a.total_commits);
 
-        // Split into two rings - HIGH commits on INNER, LOW commits on OUTER
-        const midPoint = Math.ceil(sortedRepos.length / 2);
-        const innerRepos = sortedRepos.slice(0, midPoint); // High commits
-        const outerRepos = sortedRepos.slice(midPoint);    // Low commits
+        // Phân bố màu startup cho repos có commit = 1: tản đều theo quy luật cố định.
+        const oneCommitRepos = sortedRepos
+            .filter(repo => getCommitCount(repo) === 1)
+            .sort((a, b) => getStableRandomUnit(a.repo_full_name) - getStableRandomUnit(b.repo_full_name));
 
+        const oneCommitUnitByRepo = new Map();
+        const oneCommitTotal = oneCommitRepos.length;
+        oneCommitRepos.forEach((repo, index) => {
+            const unit = Math.max(0, Math.min(0.999999, (index + 0.5) / oneCommitTotal));
+            oneCommitUnitByRepo.set(repo.repo_full_name, unit);
+        });
+
+        const getStartupSpreadColor = (repoKey) => {
+            const fallbackUnit = getStableRandomUnit(repoKey);
+            const unit = oneCommitUnitByRepo.get(repoKey) ?? fallbackUnit;
+            return getHeatColor(unit);
+        };
+
+        const getRepoColor = (repo) => {
+            const commitCount = getCommitCount(repo);
+            if (commitCount === 1) {
+                return getStartupSpreadColor(repo.repo_full_name);
+            }
+
+            const ratio = maxCommits > 0 ? (commitCount / maxCommits) : 0;
+            return getHeatColor(ratio);
+        };
+
+        // Split into three rings: a small core ring plus the existing two rings.
+        const coreCount = Math.min(5, sortedRepos.length);
+        const coreRepos = sortedRepos.slice(0, coreCount);
+        const remainingRepos = sortedRepos.slice(coreCount);
+        const midPoint = Math.ceil(remainingRepos.length / 2);
+        const innerRepos = remainingRepos.slice(0, midPoint); // High commits
+        const outerRepos = remainingRepos.slice(midPoint);    // Low commits
+
+        const coreRadius = 220;
         const innerRadiusX = 600;
         const innerRadiusY = 420;
         const outerRadiusX = 1100;
         const outerRadiusY = 550;
 
         const repos = [];
+
+        // Get fixed angles for core ring
+        const coreAngles = getFixedAngles(coreRepos.length);
+
+        // Position core ring repos (few high-activity repos in the center)
+        coreRepos.forEach((repo, index) => {
+            const angle = coreAngles[index];
+            const x = centerX + coreRadius * Math.cos(angle);
+            const y = centerY + coreRadius * Math.sin(angle);
+            const repoName = getRepoShortName(repo.repo_full_name);
+
+            const color = getRepoColor(repo);
+
+            repos.push({
+                x,
+                y,
+                color,
+                repoName,
+                fullName: repo.repo_full_name,
+                commits: repo.total_commits,
+                angle,
+                ring: 'core'
+            });
+        });
 
         // Get fixed angles for inner ring
         const innerAngles = getFixedAngles(innerRepos.length);
@@ -231,9 +298,8 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
             const y = centerY + innerRadiusY * Math.sin(angle);
             const repoName = getRepoShortName(repo.repo_full_name);
 
-            // Tính toán màu dựa trên tổng số lượng commit
-            const ratio = maxCommits > 0 ? (repo.total_commits / maxCommits) : 0;
-            const color = getHeatColor(ratio);
+            // Tính toán màu theo trạng thái commit hiện tại
+            const color = getRepoColor(repo);
 
             repos.push({
                 x,
@@ -259,9 +325,8 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
             const y = centerY + outerRadiusY * Math.sin(angle);
             const repoName = getRepoShortName(repo.repo_full_name);
 
-            // Tính toán màu dựa trên tổng số lượng commit
-            const ratio = maxCommits > 0 ? (repo.total_commits / maxCommits) : 0;
-            const color = getHeatColor(ratio);
+            // Tính toán màu theo trạng thái commit hiện tại
+            const color = getRepoColor(repo);
 
             repos.push({
                 x,
@@ -480,7 +545,7 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                             const ratio = count / maxCommits;
 
                             // 8-step fine-grained color scale
-                            if (ratio <= 0.125) return '#3a0ca3'; // Deep Purple
+                            if (ratio <= 0.125) return '#4361ee'; // Royal Blue
                             if (ratio <= 0.250) return '#4361ee'; // Royal Blue
                             if (ratio <= 0.375) return '#4cc9f0'; // Neon Cyan
                             if (ratio <= 0.500) return '#2ecc71'; // Neon Green

@@ -86,6 +86,28 @@ const NODE_TRACKING_SPRING = {
     mass: 0.8,
 };
 
+const REPO_LABEL_DISTANCE = 100;
+const REPO_CARD_WIDTH = 290;
+const REPO_CARD_HEIGHT = 115;
+
+const getRepoCardEdgePoint = (anchorX, anchorY, angle) => {
+    const unitX = Math.cos(angle);
+    const unitY = Math.sin(angle);
+    const cardCenterX = anchorX + REPO_LABEL_DISTANCE * unitX;
+    const cardCenterY = anchorY + REPO_LABEL_DISTANCE * unitY;
+    const halfW = REPO_CARD_WIDTH / 2;
+    const halfH = REPO_CARD_HEIGHT / 2;
+    const travelToEdge = Math.min(
+        halfW / (Math.abs(unitX) || Number.EPSILON),
+        halfH / (Math.abs(unitY) || Number.EPSILON)
+    );
+
+    return {
+        x: cardCenterX - unitX * travelToEdge,
+        y: cardCenterY - unitY * travelToEdge,
+    };
+};
+
 /**
  * Component: Energy Pulse - Hiệu ứng năng lượng chạy trên line
  */
@@ -391,6 +413,7 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                         const recentCount = recentActivity.filter(c => c.repoName === repo.fullName).length;
                         const HEAT_THRESHOLD = 30;
                         const heatFactor = Math.min(recentCount / HEAT_THRESHOLD, 1);
+                        const lineTarget = getRepoCardEdgePoint(repo.x, repo.y, repo.angle);
 
                         let dynamicColor = repo.color;
                         if (heatFactor > 0.6) dynamicColor = '#FF0000';
@@ -411,9 +434,9 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                                     pathLength: 1,
                                     opacity: heatFactor > 0.2 ? 1 : 0.7,
                                     stroke: dynamicColor,
-                                    // Keep endpoint pinned to current repo position so it always follows reordering.
-                                    x2: repo.x,
-                                    y2: repo.y
+                                    // Anchor to card edge so the connection visually touches the repo card.
+                                    x2: lineTarget.x,
+                                    y2: lineTarget.y
                                 }}
                                 style={{
                                     filter: `drop-shadow(0 0 8px ${dynamicColor})`
@@ -434,14 +457,15 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                         {activeCommits.map((commit) => {
                             const targetRepo = graphData.repos.find(r => r.fullName === commit.repoName);
                             if (!targetRepo) return null;
+                            const pulseTarget = getRepoCardEdgePoint(targetRepo.x, targetRepo.y, targetRepo.angle);
 
                             return (
                                 <EnergyPulse
                                     key={commit.id}
                                     centerX={graphData.center.x}
                                     centerY={graphData.center.y}
-                                    targetX={targetRepo.x}
-                                    targetY={targetRepo.y}
+                                    targetX={pulseTarget.x}
+                                    targetY={pulseTarget.y}
                                     color={targetRepo.color}
                                 />
                             );
@@ -527,13 +551,12 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                     {/* === REPO NODES === */}
                     {graphData.repos.map((repo, index) => {
                         // Relative layout calculations
-                        const labelDistance = 100;
-                        const localLabelX = labelDistance * Math.cos(repo.angle);
-                        const localLabelY = labelDistance * Math.sin(repo.angle);
+                        const localLabelX = REPO_LABEL_DISTANCE * Math.cos(repo.angle);
+                        const localLabelY = REPO_LABEL_DISTANCE * Math.sin(repo.angle);
 
                         // Rectangle dimensions
-                        const rectWidth = 290;
-                        const rectHeight = 115;
+                        const rectWidth = REPO_CARD_WIDTH;
+                        const rectHeight = REPO_CARD_HEIGHT;
 
                         // Center the rect around the label point
                         const localRectX = localLabelX - rectWidth / 2;

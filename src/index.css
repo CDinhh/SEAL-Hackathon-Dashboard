@@ -605,3 +605,17 @@ body::after {
 .top1-glitch-text {
   animation: top1Glitch 3s infinite;
 }
+
+.leader-glow {
+    box-shadow: 0 0 25px 5px #FFD700, 0 0 40px 15px #F5A623;
+    animation: leader-pulse 2s infinite alternate;
+}
+
+@keyframes leader-pulse {
+    from {
+        box-shadow: 0 0 25px 5px #FFD700, 0 0 40px 15px #F5A623;
+    }
+    to {
+        box-shadow: 0 0 35px 10px #FFD700, 0 0 50px 20px #F5A623;
+    }
+}

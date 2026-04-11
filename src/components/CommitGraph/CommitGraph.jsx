@@ -544,22 +544,7 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                             : repo.repoName;
 
                         const maxCommits = Math.max(...graphData.repos.map(r => r.commits));
-                        const getHeatmapColor = (count) => {
-                            if (count === 0) return '#1a0b2e'; // Dark Base
-                            const ratio = count / maxCommits;
 
-                            // 8-step fine-grained color scale
-                            if (ratio <= 0.125) return '#4361ee'; // Royal Blue
-                            if (ratio <= 0.250) return '#4361ee'; // Royal Blue
-                            if (ratio <= 0.375) return '#4cc9f0'; // Neon Cyan
-                            if (ratio <= 0.500) return '#2ecc71'; // Neon Green
-                            if (ratio <= 0.625) return '#b4b709ff'; // Bright Yellow-Green (User preference)
-                            if (ratio <= 0.750) return '#f39c12'; // Neon Orange
-                            if (ratio <= 0.875) return '#f72585'; // Neon Pink
-                            return '#ff0054'; // Strong Neon Red for Top
-                        };
-
-                        const badgeColor = getHeatmapColor(repo.commits);
                         const isTop1 = repo.commits === maxCommits && maxCommits > 0;
                         const repoRecentActivity = recentActivity.filter(c => c.repoName === repo.fullName);
                         const recentCount = repoRecentActivity.length;
@@ -576,6 +561,8 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                         else if (heatFactor > 0.2) dynamicColor = '#FF8800';
 
                         const hasActiveCommit = activeCommits.some(c => c.repoName === repo.fullName);
+                        const badgeGradientId = `badge-gradient-${index}`;
+                        const badgeBlurFilterId = `badge-blur-${index}`;
 
                         const floatParams = getStableFloatParams(repo.fullName);
 
@@ -625,6 +612,19 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                                         delay: floatParams.delay
                                     }}
                                 >
+                                    <defs>
+                                        <linearGradient id={badgeGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stopColor={dynamicColor} stopOpacity="0" />
+                                            <stop offset="18%" stopColor={dynamicColor} stopOpacity="0.7" />
+                                            <stop offset="50%" stopColor={dynamicColor} stopOpacity="0.82" />
+                                            <stop offset="82%" stopColor={dynamicColor} stopOpacity="0.7" />
+                                            <stop offset="100%" stopColor={dynamicColor} stopOpacity="0" />
+                                        </linearGradient>
+                                        <filter id={badgeBlurFilterId} x="-40%" y="-70%" width="180%" height="240%">
+                                            <feGaussianBlur stdDeviation="5.6" />
+                                        </filter>
+                                    </defs>
+
                                     {/* Repo Pulse Ring (Wave Effect) */}
                                     {hasActiveCommit && (
                                         <motion.rect
@@ -703,8 +703,21 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                                         width={116}
                                         height={42}
                                         rx="8"
-                                        fill={badgeColor}
-                                        animate={hasActiveCommit ? { fill: [badgeColor, '#ffffff', badgeColor] } : {}}
+                                        fill={`url(#${badgeGradientId})`}
+                                        filter={`url(#${badgeBlurFilterId})`}
+                                        opacity={0.95}
+                                        animate={hasActiveCommit ? { opacity: [0.8, 1, 0.8] } : {}}
+                                        transition={{ duration: 0.5 }}
+                                    />
+                                    <motion.rect
+                                        x={localLabelX - 54}
+                                        y={localLabelY + 14}
+                                        width={108}
+                                        height={34}
+                                        rx="7"
+                                        fill={`url(#${badgeGradientId})`}
+                                        opacity={0.85}
+                                        animate={hasActiveCommit ? { opacity: [0.75, 0.95, 0.75] } : {}}
                                         transition={{ duration: 0.5 }}
                                     />
                                     <motion.text

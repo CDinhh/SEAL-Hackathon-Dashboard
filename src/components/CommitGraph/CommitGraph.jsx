@@ -97,7 +97,7 @@ const EnergyPulse = ({ centerX, centerY, targetX, targetY, color }) => {
             r="12"
             fill={color}
             opacity="0"
-            style={{ filter: `drop-shadow(0 0 15px ${color})` }}
+            style={{ filter: `drop-shadow(0 0 8px ${color})` }}
             initial={{ cx: centerX, cy: centerY, opacity: 0, r: 12 }}
             animate={{
                 cx: targetX,

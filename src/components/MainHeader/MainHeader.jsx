@@ -12,7 +12,7 @@ const MainHeader = () => {
                     <img
                         src={logo_fpt}
                         alt="logo"
-                        className='w-64 h-auto drop-shadow-lg filter brightness-110'
+                        className='w-64 h-auto'
                     />
                     {/* <img
                         src={logo_hackathon}

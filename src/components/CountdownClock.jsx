@@ -77,7 +77,7 @@ const CountdownClock = () => {
         <div className="flex flex-row items-center justify-center space-x-10 pb-2">
             {/* Time Display */}
             <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-500 
-                bg-clip-text text-transparent font-mono drop-shadow-[0_0_30px_rgba(247,37,133,0.8)]">
+                bg-clip-text text-transparent font-mono">
                 {formatTime(remaining)}
             </h1>
 

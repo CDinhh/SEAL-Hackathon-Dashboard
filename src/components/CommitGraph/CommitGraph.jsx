@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { getRepoShortName } from '../../utils/converCommitToHeapmap.js';
-import logoHackathon from '../../assets/logo-hackathon.png';
+import logoHackathon from '../../assets/Frame 8.png';
 
 const hours = [7, 8, 9, 10, 11, 12, 13, 14];
 
@@ -380,9 +380,9 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                 >
                     <defs>
                         <radialGradient id="centerGradient">
-                            <stop offset="0%" stopColor="#f72585" />
-                            <stop offset="50%" stopColor="#7209b7" />
-                            <stop offset="100%" stopColor="#3a0ca3" />
+                            <stop offset="0%" stopColor="#00E7A7" />
+                            <stop offset="50%" stopColor="#00A3FF" />
+                            <stop offset="100%" stopColor="#003A8C" />
                         </radialGradient>
                     </defs>
 
@@ -465,7 +465,7 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                         <motion.circle
                             r={graphData.center.size + 15}
                             fill="none"
-                            stroke="#f72585"
+                            stroke="#00E7A7"
                             strokeWidth={3}
                             strokeDasharray="10, 30"
                             opacity="0.5"
@@ -478,7 +478,7 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                             <motion.circle
                                 r={graphData.center.size}
                                 fill="none"
-                                stroke="#f72585"
+                                stroke="#00E7A7"
                                 strokeWidth={6}
                                 initial={{ r: graphData.center.size, opacity: 0.8 }}
                                 animate={{
@@ -496,14 +496,14 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                         <motion.circle
                             r={graphData.center.size}
                             fill="url(#centerGradient)"
-                            stroke="#f72585"
+                            stroke="#00E7A7"
                             strokeWidth={4}
-                            style={{ filter: "drop-shadow(0 0 30px #7209b7)" }}
+                            style={{ filter: "drop-shadow(0 0 30px #00A3FF)" }}
                             animate={{
                                 scale: activeCommits.length > 0 ? [1, 1.1, 1] : 1,
                                 filter: activeCommits.length > 0
-                                    ? ["drop-shadow(0 0 30px #7209b7)", "drop-shadow(0 0 60px #f72585)", "drop-shadow(0 0 30px #7209b7)"]
-                                    : "drop-shadow(0 0 30px #7209b7)"
+                                    ? ["drop-shadow(0 0 30px #00A3FF)", "drop-shadow(0 0 60px #00E7A7)", "drop-shadow(0 0 30px #00A3FF)"]
+                                    : "drop-shadow(0 0 30px #00A3FF)"
                             }}
                             transition={{ duration: 0.5 }}
                         />
@@ -511,12 +511,16 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                         {/* Logo Image */}
                         <image
                             href={logoHackathon}
-                            x="-90"
-                            y="-90"
-                            width="180"
-                            height="180"
-                            opacity="0.95"
-                            style={{ pointerEvents: 'none' }}
+                            x="-120"
+                            y="-120"
+                            width="240"
+                            height="240"
+                            opacity="1"
+                            style={{
+                                pointerEvents: 'none',
+                                imageRendering: 'crisp-edges',
+                                filter: 'drop-shadow(0 0 8px rgba(0, 0, 0, 0.55)) contrast(1.12) saturate(1.15)'
+                            }}
                         />
                     </g>
 
@@ -684,10 +688,10 @@ const CommitGraph = ({ data, onSimulateCommit }) => {
                                         x={localLabelX}
                                         y={localLabelY - 10}
                                         textAnchor="middle"
-                                        fill={isTop1 ? "#FFD700" : dynamicColor}
+                                        fill="#ffffff"
                                         fontSize="30"
                                         fontWeight="bold"
-                                        style={isTop1 ? { textShadow: `0 0 15px #FFD700, 0 0 30px #FF8800` } : { textShadow: `0 0 10px ${dynamicColor}` }}
+                                        style={{ textShadow: '0 0 10px #ffffff' }}
                                     >
                                         {displayRepoName}
                                     </text>

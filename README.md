@@ -7,7 +7,7 @@ Dashboard realtime để theo dõi commit của các team trong hackathon.
 - Vite 7
 - React Router 7
 - Tailwind CSS 3
-- Firebase Realtime Database
+- Firebase Realtime Database (forked from https://github.com/baodhg/SEAL-Hackathon-Dashboard)
 - Framer Motion
 
 ## 2. Yêu cầu môi trường

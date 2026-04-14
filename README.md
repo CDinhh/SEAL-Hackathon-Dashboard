@@ -1,5 +1,10 @@
-# SEAL Hackathon Dashboard
-
+<h1>
+	SEAL Hackathon Dashboard
+	<a href="https://app.netlify.com/projects/seal-hackathon-dashboard/deploys">
+		<img align="right" src="https://api.netlify.com/api/v1/badges/5415e6e9-21f5-43e6-90f5-d1dc3341807d/deploy-status" alt="Netlify Status" />
+	</a>
+</h1>
+ 
 Dashboard realtime để theo dõi commit của các team trong hackathon.
 
 ## 1. Tech stack

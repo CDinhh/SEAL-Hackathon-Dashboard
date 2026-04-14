@@ -1,5 +1,4 @@
 import React from 'react'
-// import logo_hackathon from '../../assets/logo-hackathon.png'
 import logo_fpt from '../../assets/logo-fpt.png'
 import Clock from '../CountdownClock.jsx'
 
@@ -14,11 +13,6 @@ const MainHeader = () => {
                         alt="logo"
                         className='w-64 h-auto drop-shadow-lg filter brightness-110'
                     />
-                    {/* <img
-                        src={logo_hackathon}
-                        alt="logo"
-                        className='w-64 h-auto drop-shadow-lg filter brightness-110'
-                    /> */}
                 </div>
             </div>
             {/* Cột giữa rỗng để đẩy cột Đồng hồ sang tít bên phải */}
